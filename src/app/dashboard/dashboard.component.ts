@@ -1,14 +1,56 @@
 import { Component, OnInit } from '@angular/core';
 import * as Chartist from 'chartist';
 
+import { TreeService } from '../services/tree.service';
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit {
+  showUpload = false;
+  selectedFile: File | null = null;
 
-  constructor() { }
+  constructor(private treeService: TreeService) { }
+
+  onFileSelected(event: any) {
+    this.selectedFile = event.target.files[0];
+    console.log('Archivo seleccionado:', this.selectedFile?.name);
+  }
+  onDrop(event: DragEvent) {
+    event.preventDefault();
+    if (event.dataTransfer?.files.length) {
+      this.selectedFile = event.dataTransfer.files[0];
+      console.log('Archivo seleccionado por arrastre:', this.selectedFile?.name);
+    }
+  }
+  uploadFile() {
+  if (!this.selectedFile) {  // ← CORREGIDO: falta el signo !
+    alert('Selecciona un archivo primero');
+    return;
+  }
+
+  console.log('Enviando archivo:', this.selectedFile.name);
+  
+  this.treeService.uploadJson(this.selectedFile).subscribe({
+    next: (res) => {
+      console.log('✅ Éxito:', res);
+      alert('Archivo cargado correctamente');
+      this.showUpload = false;
+      this.selectedFile = null;
+      
+      // Actualizar métricas
+      this.treeService.getStats().subscribe(stats => {
+        console.log('Métricas actualizadas:', stats);
+      });
+    },
+    error: (err) => {
+      console.error('❌ Error:', err);
+      alert('Error al cargar el archivo');
+    }
+  });
+}
+
   startAnimationForLineChart(chart){
       let seq: any, delays: any, durations: any;
       seq = 0;
