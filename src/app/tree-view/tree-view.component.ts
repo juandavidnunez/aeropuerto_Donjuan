@@ -3,6 +3,7 @@ import { forkJoin } from 'rxjs';
 import { FlightService } from 'app/services/flight.service';
 import { TreeService } from '../services/tree.service';
 
+
 @Component({
   selector: 'app-tree-view',
   templateUrl: './tree-view.component.html',
@@ -178,6 +179,7 @@ openInsertModal() {
 
 openEditModal() {
   if (!this.selectedNode) return;
+  console.log('🖱️ OPEN EDIT MODAL EJECUTADO - Nodo:', this.selectedNode);
   this.modalTitle = 'Editar vuelo: ' + this.selectedNode.code;
   this.formData = { ...this.selectedNode };
   this.showModal = true;
@@ -206,6 +208,8 @@ closeModal() {
   } 
 
 submitForm() {
+
+  console.log('📝 SUBMIT FORM - formData:', this.formData);
   if (this.modalTitle.includes('Insertar')) {
     this.insertFlight();
   } else {
@@ -214,8 +218,12 @@ submitForm() {
 }
 
       updateFlight() {
+
+          console.log('📝 Actualizando vuelo:', this.selectedNode.code);
+  console.log('📦 Nuevos datosNuevos datos:', this.formData);
     this.flightService.update(this.selectedNode.code, this.formData).subscribe({
-      next: () => {
+      next: (response) => {
+        console.log('Respuesta del servidor', response)
         this.statusMessage = '✅ Vuelo actualizado correctamente';
         this.closeModal();
         this.selectedNode = null;
