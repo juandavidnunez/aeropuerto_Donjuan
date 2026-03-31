@@ -157,6 +157,7 @@ formData: any = {
 
   // Seleccionar nodo al hacer clic
 selectNode(node: any) {
+  console.log('🖱️ SELECT NODE EJECUTADO - Nodo:', node?.code);
   this.selectedNode = node;
 }
 
