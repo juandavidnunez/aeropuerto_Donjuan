@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { forkJoin } from 'rxjs';
-
+import { FlightService } from 'app/services/flight.service';
 import { TreeService } from '../services/tree.service';
 
 @Component({
@@ -17,8 +17,23 @@ export class TreeViewComponent implements OnInit {
   selectedFileName = '';
   statusMessage = 'Selecciona un archivo JSON para cargar el árbol.';
   isLoading = false;
+  selectedNode: any = null;
 
-  constructor(private treeService: TreeService) { }
+  // Variables para modal
+showModal: boolean = false;
+modalTitle: string = '';
+formData: any = {
+  code: '',
+  origin: '',
+  destination: '',
+  base_price: 0,
+  passengers: 0,
+  promotion: 0,
+  priority: 1
+};
+
+    constructor(
+    private treeService: TreeService, private flightService: FlightService) { }
 
   ngOnInit(): void {
     this.refreshTrees();
@@ -122,5 +137,95 @@ export class TreeViewComponent implements OnInit {
 
   shouldShowBst(): boolean {
     return this.selectedMode === 'insertion' || !!this.bstTree?.root;
+  }
+
+  // Seleccionar nodo al hacer clic
+selectNode(node: any) {
+  this.selectedNode = node;
+}
+
+// Abrir modal para insertar
+openInsertModal() {
+  this.modalTitle = 'Insertar nuevo vuelo';
+  this.formData = {
+    code: '',
+    origin: '',
+    destination: '',
+    base_price: 0,
+    passengers: 0,
+    promotion: 0,
+    priority: 1
+  };
+  this.showModal = true;
+}
+
+openEditModal() {
+  if (!this.selectedNode) return;
+  this.modalTitle = 'Editar vuelo: ' + this.selectedNode.code;
+  this.formData = { ...this.selectedNode };
+  this.showModal = true;
+}
+
+// Cerrar modal
+closeModal() {
+  this.showModal = false;
+}
+
+
+
+// Insertar vuelo
+  insertFlight() {
+    this.flightService.insert(this.formData).subscribe({
+      next: () => {
+        this.statusMessage = '✅ Vuelo insertado correctamente';
+        this.closeModal();
+        this.refreshTrees();
+      },
+      error: (err) => {
+        console.error(err);
+        this.statusMessage = '❌ Error al insertar vuelo';
+      }
+    });
+  } 
+  
+submitForm() {
+  if (this.modalTitle.includes('Insertar')) {
+    this.insertFlight();
+  } else {
+    this.updateFlight();
+  }
+}
+
+      updateFlight() {
+    this.flightService.update(this.selectedNode.code, this.formData).subscribe({
+      next: () => {
+        this.statusMessage = '✅ Vuelo actualizado correctamente';
+        this.closeModal();
+        this.selectedNode = null;
+        this.refreshTrees();
+      },
+      error: (err) => {
+        console.error(err);
+        this.statusMessage = '❌ Error al actualizar vuelo';
+      }
+    });
+  }
+
+  // Eliminar nodo
+  deleteNode() {
+    if (!this.selectedNode) return;
+    if (confirm(`¿Eliminar vuelo ${this.selectedNode.code}?`)) {
+      this.flightService.delete(this.selectedNode.code).subscribe({
+        next: () => {
+          this.statusMessage = '✅ Vuelo eliminado correctamente';
+          this.selectedNode = null;
+          this.refreshTrees();
+        },
+        error: (err) => {
+          console.error(err);
+          this.statusMessage = '❌ Error al eliminar vuelo';
+        }
+      });
+    }
   }
 }
