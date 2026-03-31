@@ -187,7 +187,7 @@ closeModal() {
       }
     });
   } 
-  
+
 submitForm() {
   if (this.modalTitle.includes('Insertar')) {
     this.insertFlight();
