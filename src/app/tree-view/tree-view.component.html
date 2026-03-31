@@ -78,7 +78,19 @@
       <button class="btn btn-danger" (click)="deleteNode()" [disabled]="!selectedNode">
         🗑️ Eliminar nodo
       </button>
+      <button class="btn btn-cancel-flight" (click)="cancelFlight()" [disabled]="!selectedNode">
+        🚫 Cancelar vuelo
+      </button>
+      <button class="btn btn-undo" (click)="undoLastAction()" [disabled]="isLoading">
+        ↩️ Deshacer acción
+      </button>
     </div>
+    <p class="selection-hint" *ngIf="selectedNode; else selectNodeHint">
+      Nodo seleccionado: <strong>{{ selectedNode.code }}</strong>. La cancelación elimina ese nodo y toda su descendencia.
+    </p>
+    <ng-template #selectNodeHint>
+      <p class="selection-hint">Selecciona un nodo del árbol para editarlo, eliminarlo o cancelarlo.</p>
+    </ng-template>
   </div>
 </div>
 

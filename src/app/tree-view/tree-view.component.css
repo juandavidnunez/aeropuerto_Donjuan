@@ -220,11 +220,41 @@
 .action-buttons button {
   min-width: 160px;
   padding: 10px 16px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .action-buttons button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.btn-undo,
+.btn-cancel-flight {
+  border: none;
+  color: #fff;
+}
+
+.btn-undo {
+  background-color: rgb(84, 160, 235);
+
+}
+
+.btn-cancel-flight {
+  background-color: saddlebrown;
+}
+
+.btn-undo:hover,
+.btn-cancel-flight:hover,
+.action-buttons button:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.16);
+}
+
+.selection-hint {
+  margin: 14px 0 0;
+  text-align: center;
+  color: #5f6c80;
+  font-size: 14px;
 }
 
 .modal-overlay {

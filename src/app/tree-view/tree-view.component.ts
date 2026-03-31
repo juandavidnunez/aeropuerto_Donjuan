@@ -228,6 +228,40 @@ submitForm() {
     });
   }
 
+  cancelFlight(): void {
+    if (!this.selectedNode) return;
+
+    const selectedCode = this.selectedNode.code;
+    if (confirm(`¿Cancelar el vuelo ${selectedCode} y eliminar todo su subárbol?`)) {
+      this.flightService.cancel(selectedCode).subscribe({
+        next: (response) => {
+          const removedNodes = response?.nodes_removed ?? 0;
+          this.statusMessage = `✅ Cancelación masiva realizada. Se eliminaron ${removedNodes} nodo(s) desde ${selectedCode}.`;
+          this.selectedNode = null;
+          this.refreshTrees();
+        },
+        error: (err) => {
+          console.error(err);
+          this.statusMessage = this.getFriendlyErrorMessage(err, '❌ Error al cancelar el vuelo.');
+        }
+      });
+    }
+  }
+
+  undoLastAction(): void {
+    this.treeService.undoLastAction().subscribe({
+      next: () => {
+        this.statusMessage = '↩️ Última acción deshecha correctamente.';
+        this.selectedNode = null;
+        this.refreshTrees();
+      },
+      error: (err) => {
+        console.error(err);
+        this.statusMessage = this.getFriendlyErrorMessage(err, 'No hay acciones para deshacer.');
+      }
+    });
+  }
+
   // Eliminar nodo
   deleteNode() {
     if (!this.selectedNode) return;
@@ -240,7 +274,7 @@ submitForm() {
         },
         error: (err) => {
           console.error(err);
-          this.statusMessage = '❌ Error al eliminar vuelo';
+          this.statusMessage = this.getFriendlyErrorMessage(err, '❌ Error al eliminar vuelo.');
         }
       });
     }

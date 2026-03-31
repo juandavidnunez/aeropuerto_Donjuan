@@ -41,4 +41,8 @@ export class TreeService {
     const params = new HttpParams().set('tree_type', treeType);
     return this.http.get(`${this.apiUrl}/stats`, { params });
   }
+
+  undoLastAction(): Observable<any> {
+    return this.http.post(`${this.apiUrl}/undo`, {});
+  }
 }
