@@ -11,6 +11,7 @@ import { UpgradeComponent } from '../../upgrade/upgrade.component';
 import { TreeViewComponent } from '../../tree-view.component';
 
 export const AdminLayoutRoutes: Routes = [
+    { path: '', redirectTo: 'tree-view', pathMatch: 'full' },
     // {
     //   path: '',
     //   children: [ {
