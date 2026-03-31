@@ -64,10 +64,23 @@ export class TreeViewComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error al cargar el árbol:', error);
-        this.statusMessage = error?.error?.detail || 'No se pudo cargar el árbol.';
+        this.statusMessage = this.getFriendlyErrorMessage(error, 'No se pudo cargar el árbol.');
         this.isLoading = false;
       }
     });
+  }
+
+  private getFriendlyErrorMessage(error: any, fallbackMessage: string): string {
+    if (error?.status === 0) {
+      return 'No se pudo conectar con el backend. Verifica que Uvicorn esté corriendo en http://127.0.0.1:8000 y abre el frontend desde localhost:4200 o 127.0.0.1:4200.';
+    }
+
+    const detail = error?.error?.detail;
+    if (typeof detail === 'string' && detail.trim().length > 0) {
+      return detail;
+    }
+
+    return fallbackMessage;
   }
 
   detectMode(data: any): 'topology' | 'insertion' {
@@ -114,7 +127,10 @@ export class TreeViewComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error al obtener el árbol:', error);
-        this.statusMessage = 'Aún no hay datos cargados. Selecciona un archivo JSON.';
+        this.statusMessage = this.getFriendlyErrorMessage(
+          error,
+          'Aún no hay datos cargados. Selecciona un archivo JSON.'
+        );
         this.isLoading = false;
       }
     });
