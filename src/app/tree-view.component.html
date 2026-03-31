@@ -1,0 +1,137 @@
+<div class="tree-page">
+  <div class="card upload-card">
+    <div class="card-header card-header-primary">
+      <h4 class="card-title">Carga del árbol</h4>
+      <p class="card-category">Selecciona un archivo JSON desde tu computador</p>
+    </div>
+
+    <div class="card-body">
+      <div class="toolbar">
+        <div class="control-block">
+          <label for="modeSelect">Modo de carga</label>
+          <select id="modeSelect" class="form-control" [(ngModel)]="selectedMode">
+            <option value="insertion">Inserción</option>
+            <option value="topology">Topología</option>
+          </select>
+        </div>
+
+        <div class="control-block file-block">
+          <label for="jsonFile">Archivo JSON</label>
+          <input
+            id="jsonFile"
+            class="form-control"
+            type="file"
+            accept=".json,application/json"
+            (change)="onFileSelected($event)"
+          />
+        </div>
+
+        <button class="btn btn-primary" type="button" (click)="refreshTrees()" [disabled]="isLoading">
+          {{ isLoading ? 'Cargando...' : 'Recargar vista' }}
+        </button>
+      </div>
+
+      <p class="file-name" *ngIf="selectedFileName"><strong>Archivo:</strong> {{ selectedFileName }}</p>
+      <p class="status-message">{{ statusMessage }}</p>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="card stat-card">
+      <div class="card-body">
+        <h4>AVL</h4>
+        <p><strong>Raíz:</strong> {{ avlStats?.root_code || '—' }}</p>
+        <p><strong>Altura:</strong> {{ avlStats?.total_height ?? 0 }}</p>
+        <p><strong>Hojas:</strong> {{ avlStats?.leaf_count ?? 0 }}</p>
+        <p><strong>Nodos:</strong> {{ avlStats?.node_count ?? 0 }}</p>
+      </div>
+    </div>
+
+    <div class="card stat-card" *ngIf="shouldShowBst()">
+      <div class="card-body">
+        <h4>BST</h4>
+        <p><strong>Raíz:</strong> {{ bstStats?.root_code || '—' }}</p>
+        <p><strong>Altura:</strong> {{ bstStats?.total_height ?? 0 }}</p>
+        <p><strong>Hojas:</strong> {{ bstStats?.leaf_count ?? 0 }}</p>
+        <p><strong>Nodos:</strong> {{ bstStats?.node_count ?? 0 }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="trees-grid">
+    <div class="card tree-card">
+      <div class="card-header card-header-info">
+        <h4 class="card-title">Árbol AVL</h4>
+        <p class="card-category">Balanceado automáticamente</p>
+      </div>
+      <div class="card-body tree-canvas">
+        <div class="tree-scroll">
+          <ng-container *ngIf="avlTree?.root; else emptyTree">
+            <ng-container *ngTemplateOutlet="nodeTemplate; context: { $implicit: avlTree.root }"></ng-container>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+
+    <div class="card tree-card" *ngIf="shouldShowBst()">
+      <div class="card-header card-header-warning">
+        <h4 class="card-title">Árbol BST</h4>
+        <p class="card-category">Comparación sin balanceo</p>
+      </div>
+      <div class="card-body tree-canvas">
+        <div class="tree-scroll">
+          <ng-container *ngIf="bstTree?.root; else emptyBstTree">
+            <ng-container *ngTemplateOutlet="nodeTemplate; context: { $implicit: bstTree.root }"></ng-container>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <ng-template #emptyTree>
+    <p class="empty-state">No hay un árbol AVL cargado todavía.</p>
+  </ng-template>
+
+  <ng-template #emptyBstTree>
+    <p class="empty-state">El BST se llena cuando el JSON usa modo <strong>insertion</strong>.</p>
+  </ng-template>
+
+  <ng-template #nodeTemplate let-node>
+    <ul class="tree-list">
+      <li class="tree-item">
+        <div
+          class="node-box"
+          [class.critical]="node.is_critical"
+          [attr.title]="'Vuelo ' + node.code + ' | ' + node.origin + ' → ' + node.destination + ' | Precio final: ' + node.final_price + ' | Pasajeros: ' + node.passengers"
+        >
+          <strong>{{ node.code }}</strong>
+          <span class="node-route">{{ node.origin }} → {{ node.destination }}</span>
+          <small>H: {{ node.height }} | BF: {{ node.balance_factor }}</small>
+          <small>{{ node.passengers }} pax | ${{ node.final_price | number:'1.0-0' }}</small>
+        </div>
+
+        <ul class="tree-children" *ngIf="node.left || node.right">
+          <li class="tree-child">
+            <span class="child-tag">Izq</span>
+            <ng-container *ngIf="node.left; else emptyLeft">
+              <ng-container *ngTemplateOutlet="nodeTemplate; context: { $implicit: node.left }"></ng-container>
+            </ng-container>
+            <ng-template #emptyLeft>
+              <div class="empty-child">∅</div>
+            </ng-template>
+          </li>
+
+          <li class="tree-child">
+            <span class="child-tag">Der</span>
+            <ng-container *ngIf="node.right; else emptyRight">
+              <ng-container *ngTemplateOutlet="nodeTemplate; context: { $implicit: node.right }"></ng-container>
+            </ng-container>
+            <ng-template #emptyRight>
+              <div class="empty-child">∅</div>
+            </ng-template>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </ng-template>
+</div>

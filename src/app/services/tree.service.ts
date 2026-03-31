@@ -1,26 +1,44 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { environment } from '../../environments/environment'; 
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { from, Observable } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
+
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TreeService {
+  private readonly apiUrl = `${environment.apiUrl}/tree`;
 
-  private API = environment.apiUrl;
+  constructor(private http: HttpClient) { }
 
-  constructor(private http: HttpClient) {}
+  uploadJson(file: File, mode: 'topology' | 'insertion' = 'insertion'): Observable<any> {
+    return from(file.text()).pipe(
+      switchMap((content: string) => {
+        const parsedData = JSON.parse(content);
+        const detectedMode = String(parsedData?.mode || mode).toLowerCase();
+        const finalMode: 'topology' | 'insertion' =
+          detectedMode === 'topology' || detectedMode === 'insertion'
+            ? detectedMode
+            : mode;
 
-  uploadJson(file: File): Observable<any> {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    return this.http.post(`${this.API}/tree/load-json`, formData);
+        return this.loadTree(finalMode, parsedData);
+      })
+    );
   }
 
-  getStats(): Observable<any> {
-  
-    return this.http.get(`${this.API}/tree/stats`);
+  loadTree(mode: 'topology' | 'insertion', data: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/load`, { mode, data });
+  }
+
+  getTree(treeType: 'avl' | 'bst' = 'avl'): Observable<any> {
+    const params = new HttpParams().set('tree_type', treeType);
+    return this.http.get(`${this.apiUrl}/export`, { params });
+  }
+
+  getStats(treeType: 'avl' | 'bst' = 'avl'): Observable<any> {
+    const params = new HttpParams().set('tree_type', treeType);
+    return this.http.get(`${this.apiUrl}/stats`, { params });
   }
 }
