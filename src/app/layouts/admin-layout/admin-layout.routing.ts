@@ -8,7 +8,7 @@ import { IconsComponent } from '../../icons/icons.component';
 import { MapsComponent } from '../../maps/maps.component';
 import { NotificationsComponent } from '../../notifications/notifications.component';
 import { UpgradeComponent } from '../../upgrade/upgrade.component';
-import { TreeViewComponent } from '../../tree-view.component';
+import { TreeViewComponent } from '../../tree-view/tree-view.component';
 
 export const AdminLayoutRoutes: Routes = [
     { path: '', redirectTo: 'tree-view', pathMatch: 'full' },

@@ -5,7 +5,7 @@ import { RouterModule } from '@angular/router';
 import { FooterComponent } from './footer/footer.component';
 import { NavbarComponent } from './navbar/navbar.component';
 import { SidebarComponent } from './sidebar/sidebar.component';
-import { UploadJsonComponent } from './upload-json/upload-json.component';
+
 
 @NgModule({
   imports: [
@@ -16,13 +16,12 @@ import { UploadJsonComponent } from './upload-json/upload-json.component';
     FooterComponent,
     NavbarComponent,
     SidebarComponent,
-    UploadJsonComponent
+  
   ],
   exports: [
     FooterComponent,
     NavbarComponent,
     SidebarComponent,
-    UploadJsonComponent
   ]
 })
 export class ComponentsModule { }

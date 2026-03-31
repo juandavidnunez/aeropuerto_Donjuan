@@ -8,7 +8,7 @@ import { ComponentsModule } from './components/components.module';
 import { AppComponent } from './app.component';
 import { AdminLayoutComponent } from './layouts/admin-layout/admin-layout.component';
 import { TreeService } from './services/tree.service';
-import { TreeViewComponent } from './tree-view.component';
+import { TreeViewComponent } from '../app/tree-view/tree-view.component';
 
 @NgModule({
   imports: [

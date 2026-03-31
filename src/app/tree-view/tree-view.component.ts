@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { forkJoin } from 'rxjs';
 
-import { TreeService } from './services/tree.service';
+import { TreeService } from '../services/tree.service';
 
 @Component({
   selector: 'app-tree-view',
