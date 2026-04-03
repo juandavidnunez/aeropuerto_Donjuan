@@ -364,3 +364,58 @@
     max-width: 140px;
   }
 }
+
+/* VERSIONADO */
+.version-card {
+  margin-top: 20px;
+}
+
+.version-buttons {
+  display: flex;
+  justify-content: center;
+}
+
+.version-modal {
+  width: 600px;
+}
+
+.version-section {
+  margin-bottom: 24px;
+}
+
+.version-section h4 {
+  margin-bottom: 12px;
+  color: #3c4858;
+}
+
+.version-list {
+  list-style: none;
+  padding: 0;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.version-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  background: #f9f9f9;
+}
+
+.version-item span {
+  font-weight: 500;
+}
+
+.version-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-sm {
+  padding: 4px 8px;
+  font-size: 12px;
+}

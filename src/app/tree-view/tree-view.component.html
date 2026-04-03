@@ -152,6 +152,59 @@
 </div>
 
 <!-- ============================================= -->
+<!-- VERSIONADO -->
+<!-- ============================================= -->
+<div class="card version-card">
+  <div class="card-header card-header-info">
+    <h4 class="card-title">Versionado del Árbol</h4>
+    <p class="card-category">Guardar y restaurar versiones del árbol</p>
+  </div>
+  <div class="card-body">
+    <div class="version-buttons">
+      <button class="btn btn-info" (click)="openVersionModal()">
+        💾 Gestionar Versiones
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PARA VERSIONADO -->
+<div class="modal-overlay" *ngIf="showVersionModal" (click)="closeVersionModal()">
+  <div class="modal-container version-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Gestionar Versiones</h3>
+      <button class="close-btn" (click)="closeVersionModal()">✖</button>
+    </div>
+    <div class="modal-body">
+      <div class="version-section">
+        <h4>Guardar Nueva Versión</h4>
+        <div class="form-group">
+          <label>Nombre de la versión</label>
+          <input class="form-control" [(ngModel)]="newVersionName" placeholder="Ej: Simulación Alta Demanda">
+        </div>
+        <button class="btn btn-success" (click)="saveVersion()">💾 Guardar Versión</button>
+      </div>
+
+      <div class="version-section" *ngIf="versions.length > 0">
+        <h4>Versiones Guardadas</h4>
+        <ul class="version-list">
+          <li *ngFor="let version of versions" class="version-item">
+            <span>{{ version }}</span>
+            <div class="version-actions">
+              <button class="btn btn-sm btn-primary" (click)="restoreVersion(version)">🔄 Restaurar</button>
+              <button class="btn btn-sm btn-danger" (click)="deleteVersion(version)">🗑️ Eliminar</button>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="version-section" *ngIf="versions.length === 0">
+        <p>No hay versiones guardadas aún.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================= -->
   <div class="trees-grid">
     <div class="card tree-card">
       <div class="card-header card-header-info">

@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { FlightService } from 'app/services/flight.service';
 import { TreeService } from '../services/tree.service';
+import { VersioningService } from '../services/versioning.service';
 
 
 @Component({
@@ -20,7 +21,10 @@ export class TreeViewComponent implements OnInit {
   isLoading = false;
   selectedNode: any = null;
 
-  // Variables para modal
+  // Versioning
+  versions: string[] = [];
+  newVersionName: string = '';
+  showVersionModal: boolean = false;
 showModal: boolean = false;
 modalTitle: string = '';
 formData: any = {
@@ -34,7 +38,7 @@ formData: any = {
 };
 
     constructor(
-    private treeService: TreeService, private flightService: FlightService) { }
+    private treeService: TreeService, private flightService: FlightService, private versioningService: VersioningService) { }
 
   ngOnInit(): void {
     this.refreshTrees();
@@ -283,6 +287,78 @@ submitForm() {
         error: (err) => {
           console.error(err);
           this.statusMessage = this.getFriendlyErrorMessage(err, '❌ Error al eliminar vuelo.');
+        }
+      });
+    }
+  }
+
+  // Versioning methods
+  openVersionModal() {
+    this.newVersionName = '';
+    this.showVersionModal = true;
+    this.loadVersions();
+  }
+
+  closeVersionModal() {
+    this.showVersionModal = false;
+  }
+
+  loadVersions() {
+    this.versioningService.listVersions().subscribe({
+      next: (response) => {
+        this.versions = response.versions || [];
+      },
+      error: (error) => {
+        console.error('Error loading versions:', error);
+      }
+    });
+  }
+
+  saveVersion() {
+    if (!this.newVersionName.trim()) {
+      alert('Por favor ingresa un nombre para la versión.');
+      return;
+    }
+    this.versioningService.saveVersion(this.newVersionName.trim()).subscribe({
+      next: (response) => {
+        this.statusMessage = `✅ Versión "${this.newVersionName}" guardada correctamente.`;
+        this.closeVersionModal();
+        this.refreshTrees();
+        // Recargar versiones para mostrar la nueva
+        this.loadVersions();
+      },
+      error: (error) => {
+        console.error('Error saving version:', error);
+        this.statusMessage = '❌ Error al guardar la versión.';
+      }
+    });
+  }
+
+  restoreVersion(versionName: string) {
+    if (confirm(`¿Restaurar la versión "${versionName}"? Esto reemplazará el árbol actual.`)) {
+      this.versioningService.restoreVersion(versionName).subscribe({
+        next: () => {
+          this.statusMessage = `✅ Versión "${versionName}" restaurada correctamente.`;
+          this.refreshTrees();
+        },
+        error: (error) => {
+          console.error('Error restoring version:', error);
+          this.statusMessage = '❌ Error al restaurar la versión.';
+        }
+      });
+    }
+  }
+
+  deleteVersion(versionName: string) {
+    if (confirm(`¿Eliminar permanentemente la versión "${versionName}"? Esta acción no se puede deshacer.`)) {
+      this.versioningService.deleteVersion(versionName).subscribe({
+        next: () => {
+          this.statusMessage = `✅ Versión "${versionName}" eliminada correctamente.`;
+          this.loadVersions(); // Recargar la lista
+        },
+        error: (error) => {
+          console.error('Error deleting version:', error);
+          this.statusMessage = '❌ Error al eliminar la versión.';
         }
       });
     }
