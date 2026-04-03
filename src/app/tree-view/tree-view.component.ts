@@ -4,6 +4,7 @@ import { FlightService } from 'app/services/flight.service';
 import { TreeService } from '../services/tree.service';
 import { VersioningService } from '../services/versioning.service';
 import { QueueService } from '../services/queue.service';
+import { MetricsService } from '../services/metrics.service';
 
 
 @Component({
@@ -32,6 +33,10 @@ export class TreeViewComponent implements OnInit {
   isProcessing: boolean = false;
   processingLog: any[] = [];
   showQueueModal: boolean = false;
+
+  // Metrics
+  metrics: any = null;
+  showMetricsModal: boolean = false;
 showModal: boolean = false;
 modalTitle: string = '';
 formData: any = {
@@ -45,10 +50,13 @@ formData: any = {
 };
 
     constructor(
-    private treeService: TreeService, private flightService: FlightService, private versioningService: VersioningService, private queueService: QueueService) { }
+    private treeService: TreeService, private flightService: FlightService, private versioningService: VersioningService, private queueService: QueueService, private metricsService: MetricsService) { }
 
   ngOnInit(): void {
     this.refreshTrees();
+    this.loadMetrics();
+    this.loadVersions();
+    this.loadQueue();
   }
 
   onFileSelected(event: Event): void {
@@ -88,6 +96,8 @@ formData: any = {
         this.bstStats = response.bst_stats || null;
         this.statusMessage = response.message || 'Árbol cargado correctamente.';
         this.isLoading = false;
+        // Load metrics after tree is loaded
+        this.loadMetrics();
       },
       error: (error) => {
         console.error('Error al cargar el árbol:', error);
@@ -138,13 +148,15 @@ formData: any = {
       avlTree: this.treeService.getTree('avl'),
       bstTree: this.treeService.getTree('bst'),
       avlStats: this.treeService.getStats('avl'),
-      bstStats: this.treeService.getStats('bst')
+      bstStats: this.treeService.getStats('bst'),
+      metrics: this.metricsService.getMetrics()
     }).subscribe({
-      next: ({ avlTree, bstTree, avlStats, bstStats }) => {
+      next: ({ avlTree, bstTree, avlStats, bstStats, metrics }) => {
         this.avlTree = avlTree || { root: null };
         this.bstTree = bstTree || { root: null };
         this.avlStats = avlStats || null;
         this.bstStats = bstStats || null;
+        this.metrics = metrics || null;
 
         if (this.avlTree?.root) {
           this.statusMessage = 'Árbol cargado y listo para visualizar.';
@@ -210,6 +222,7 @@ closeModal() {
         this.statusMessage = '✅ Vuelo insertado correctamente';
         this.closeModal();
         this.refreshTrees();
+        this.loadMetrics(); // Asegurar que las métricas se actualicen
       },
       error: (err) => {
         console.error(err);
@@ -239,6 +252,7 @@ submitForm() {
         this.closeModal();
         this.selectedNode = null;
         this.refreshTrees();
+        this.loadMetrics(); // Asegurar que las métricas se actualicen
       },
       error: (err) => {
         console.error(err);
@@ -258,6 +272,7 @@ submitForm() {
           this.statusMessage = `✅ Cancelación masiva realizada. Se eliminaron ${removedNodes} nodo(s) desde ${selectedCode}.`;
           this.selectedNode = null;
           this.refreshTrees();
+          this.loadMetrics(); // Asegurar que las métricas se actualicen
         },
         error: (err) => {
           console.error(err);
@@ -273,6 +288,7 @@ submitForm() {
         this.statusMessage = '↩️ Última acción deshecha correctamente.';
         this.selectedNode = null;
         this.refreshTrees();
+        this.loadMetrics(); // Asegurar que las métricas se actualicen
       },
       error: (err) => {
         console.error(err);
@@ -290,6 +306,7 @@ submitForm() {
           this.statusMessage = '✅ Vuelo eliminado correctamente';
           this.selectedNode = null;
           this.refreshTrees();
+          this.loadMetrics(); // Asegurar que las métricas se actualicen
         },
         error: (err) => {
           console.error(err);
@@ -331,6 +348,7 @@ submitForm() {
         this.statusMessage = `✅ Versión "${this.newVersionName}" guardada correctamente.`;
         this.closeVersionModal();
         this.refreshTrees();
+        this.loadMetrics(); // Asegurar que las métricas se actualicen
         // Recargar versiones para mostrar la nueva
         this.loadVersions();
       },
@@ -347,6 +365,7 @@ submitForm() {
         next: () => {
           this.statusMessage = `✅ Versión "${versionName}" restaurada correctamente.`;
           this.refreshTrees();
+          this.loadMetrics(); // Asegurar que las métricas se actualicen
         },
         error: (error) => {
           console.error('Error restoring version:', error);
@@ -438,6 +457,7 @@ submitForm() {
 
         // Update tree display
         this.refreshTrees();
+        this.loadMetrics(); // Asegurar que las métricas se actualicen
 
         // Show conflicts if any
         if (result.balance_conflicts && result.balance_conflicts.length > 0) {
@@ -476,5 +496,41 @@ submitForm() {
         }
       });
     }
+  }
+
+  // Metrics methods
+  openMetricsModal() {
+    this.showMetricsModal = true;
+    this.loadMetrics();
+  }
+
+  closeMetricsModal() {
+    this.showMetricsModal = false;
+  }
+
+  loadMetrics() {
+    this.metricsService.getMetrics().subscribe({
+      next: (response) => {
+        this.metrics = response;
+      },
+      error: (error) => {
+        console.error('Error loading metrics:', error);
+        this.statusMessage = '❌ Error al cargar las métricas.';
+      }
+    });
+  }
+
+  getRotationEntries(): any[] {
+    if (!this.metrics?.rotations) return [];
+    return Object.entries(this.metrics.rotations).map(([type, count]) => ({
+      type: type.toUpperCase(),
+      count: count as number
+    }));
+  }
+
+  getTotalRotations(): number {
+    if (!this.metrics?.rotations) return 0;
+    const rotations = this.metrics.rotations as { [key: string]: number };
+    return Object.values(rotations).reduce((sum, count) => sum + count, 0);
   }
 }

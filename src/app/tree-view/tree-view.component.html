@@ -152,19 +152,101 @@
 </div>
 
 <!-- ============================================= -->
-<!-- VERSIONADO -->
+  <div class="trees-grid">
+    <div class="card tree-card">
+      <div class="card-header card-header-info">
+        <h4 class="card-title">Árbol AVL</h4>
+        <p class="card-category">Balanceado automáticamente</p>
+      </div>
+      <div class="card-body tree-canvas">
+        <div class="tree-scroll">
+          <ng-container *ngIf="avlTree?.root; else emptyTree">
+            <ng-container *ngTemplateOutlet="nodeTemplate; context: { $implicit: avlTree.root }"></ng-container>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+
+    <div class="card tree-card" *ngIf="shouldShowBst()">
+      <div class="card-header card-header-warning">
+        <h4 class="card-title">Árbol BST</h4>
+        <p class="card-category">Comparación sin balanceo</p>
+      </div>
+      <div class="card-body tree-canvas">
+        <div class="tree-scroll">
+          <ng-container *ngIf="bstTree?.root; else emptyBstTree">
+            <ng-container *ngTemplateOutlet="nodeTemplate; context: { $implicit: bstTree.root }"></ng-container>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+  </div>
+
 <!-- ============================================= -->
-<div class="features-grid">
-<div class="card version-card">
-  <div class="card-header card-header-info">
-    <h4 class="card-title">Versionado del Árbol</h4>
-    <p class="card-category">Guardar y restaurar versiones del árbol</p>
+<!-- MÉTRICAS ANALÍTICAS -->
+<!-- ============================================= -->
+<div class="card metrics-card">
+  <div class="card-header card-header-primary">
+    <h4 class="card-title">Métricas Analíticas del Árbol</h4>
+    <p class="card-category">Estadísticas en tiempo real del árbol AVL</p>
   </div>
   <div class="card-body">
-    <div class="version-buttons">
-      <button class="btn btn-info" (click)="openVersionModal()">
-        💾 Gestionar Versiones
+    <div class="metrics-buttons">
+      <button class="btn btn-primary" (click)="openMetricsModal()">
+        📊 Ver Métricas Detalladas
       </button>
+    </div>
+    <div class="quick-metrics" *ngIf="metrics">
+      <div class="metric-item">
+        <span class="metric-label">Altura:</span>
+        <span class="metric-value">{{ metrics.height || 0 }}</span>
+      </div>
+      <div class="metric-item">
+        <span class="metric-label">Hojas:</span>
+        <span class="metric-value">{{ metrics.leaf_count || 0 }}</span>
+      </div>
+      <div class="metric-item">
+        <span class="metric-label">Cancelaciones masivas:</span>
+        <span class="metric-value">{{ metrics.mass_cancellations || 0 }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================= -->
+<!-- FUNCIONALIDADES AVANZADAS -->
+<!-- ============================================= -->
+<div class="advanced-features-grid">
+  <!-- VERSIONADO -->
+  <div class="card version-card">
+    <div class="card-header card-header-info">
+      <h4 class="card-title">Versionado del Árbol</h4>
+      <p class="card-category">Guardar y restaurar versiones del árbol</p>
+    </div>
+    <div class="card-body">
+      <div class="version-buttons">
+        <button class="btn btn-info" (click)="openVersionModal()">
+          💾 Gestionar Versiones
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIMULACIÓN DE CONCURRENCIA -->
+  <div class="card concurrency-card">
+    <div class="card-header card-header-warning">
+      <h4 class="card-title">Simulación de Concurrencia</h4>
+      <p class="card-category">Cola de inserciones simultáneas</p>
+    </div>
+    <div class="card-body">
+      <div class="concurrency-buttons">
+        <button class="btn btn-warning" (click)="openQueueModal()">
+          📋 Gestionar Cola
+        </button>
+      </div>
+      <div class="queue-status" *ngIf="queueItems.length > 0">
+        <p><strong>Elementos en cola:</strong> {{ queueItems.length }}</p>
+      </div>
     </div>
   </div>
 </div>
@@ -203,27 +285,6 @@
       </div>
     </div>
   </div>
-</div>
-
-<!-- ============================================= -->
-<!-- SIMULACIÓN DE CONCURRENCIA -->
-<!-- ============================================= -->
-<div class="card concurrency-card">
-  <div class="card-header card-header-warning">
-    <h4 class="card-title">Simulación de Concurrencia</h4>
-    <p class="card-category">Cola de inserciones simultáneas</p>
-  </div>
-  <div class="card-body">
-    <div class="concurrency-buttons">
-      <button class="btn btn-warning" (click)="openQueueModal()">
-        📋 Gestionar Cola
-      </button>
-    </div>
-    <div class="queue-status" *ngIf="queueItems.length > 0">
-      <p><strong>Elementos en cola:</strong> {{ queueItems.length }}</p>
-    </div>
-  </div>
-</div>
 </div>
 
 <!-- MODAL PARA COLA DE CONCURRENCIA -->
@@ -317,36 +378,100 @@
   </div>
 </div>
 
-<!-- ============================================= -->
-  <div class="trees-grid">
-    <div class="card tree-card">
-      <div class="card-header card-header-info">
-        <h4 class="card-title">Árbol AVL</h4>
-        <p class="card-category">Balanceado automáticamente</p>
+<!-- MODAL PARA MÉTRICAS -->
+<div class="modal-overlay" *ngIf="showMetricsModal" (click)="closeMetricsModal()">
+  <div class="modal-container metrics-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Métricas Analíticas del Árbol AVL</h3>
+      <button class="close-btn" (click)="closeMetricsModal()">✖</button>
+    </div>
+    <div class="modal-body" *ngIf="metrics">
+      <div class="metrics-section">
+        <h4>📏 Dimensiones del Árbol</h4>
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-title">Altura Actual</div>
+            <div class="metric-value">{{ metrics.height || 0 }}</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">Cantidad de Hojas</div>
+            <div class="metric-value">{{ metrics.leaf_count || 0 }}</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">Total de Nodos</div>
+            <div class="metric-value">{{ metrics.node_count || 0 }}</div>
+          </div>
+        </div>
       </div>
-      <div class="card-body tree-canvas">
-        <div class="tree-scroll">
-          <ng-container *ngIf="avlTree?.root; else emptyTree">
-            <ng-container *ngTemplateOutlet="nodeTemplate; context: { $implicit: avlTree.root }"></ng-container>
-          </ng-container>
+
+      <div class="metrics-section">
+        <h4>🔄 Rotaciones Realizadas</h4>
+        <div class="rotations-grid">
+          <div class="rotation-item" *ngFor="let rotation of getRotationEntries()">
+            <span class="rotation-type">{{ rotation.type }}</span>
+            <span class="rotation-count">{{ rotation.count }}</span>
+          </div>
+        </div>
+        <div class="total-rotations">
+          <strong>Total de rotaciones: {{ getTotalRotations() }}</strong>
+        </div>
+      </div>
+
+      <div class="metrics-section">
+        <h4>🚫 Cancelaciones Masivas</h4>
+        <div class="metric-card">
+          <div class="metric-title">Total de Cancelaciones</div>
+          <div class="metric-value">{{ metrics.mass_cancellations || 0 }}</div>
+          <div class="metric-description">Número de veces que se eliminó un nodo con toda su descendencia</div>
+        </div>
+      </div>
+
+      <div class="metrics-section">
+        <h4>🔍 Recorridos del Árbol</h4>
+        <div class="traversal-section">
+          <h5>Recorrido en Anchura</h5>
+          <div class="traversal-codes">
+            <span *ngFor="let code of metrics.bfs_order; let i = index" class="code-chip">
+              {{ code }}{{ i < metrics.bfs_order.length - 1 ? ',' : '' }}
+            </span>
+          </div>
+        </div>
+
+        <div class="traversal-section">
+          <h5>Recorrido en Profundidad (Preorden)</h5>
+          <div class="traversal-codes">
+            <span *ngFor="let code of metrics.dfs_preorder; let i = index" class="code-chip">
+              {{ code }}{{ i < metrics.dfs_preorder.length - 1 ? ',' : '' }}
+            </span>
+          </div>
+        </div>
+
+        <div class="traversal-section">
+          <h5>Recorrido Inorden</h5>
+          <div class="traversal-codes">
+            <span *ngFor="let code of metrics.inorder; let i = index" class="code-chip">
+              {{ code }}{{ i < metrics.inorder.length - 1 ? ',' : '' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="metrics-section" *ngIf="metrics.stress_mode">
+        <h4>⚠️ Modo Estrés Activado</h4>
+        <p>El árbol está operando en modo estrés. Las rotaciones están deshabilitadas para simular un árbol desbalanceado.</p>
+        <div class="stress-info">
+          <div class="metric-card">
+            <div class="metric-title">Profundidad Crítica</div>
+            <div class="metric-value">{{ metrics.critical_depth || 0 }}</div>
+          </div>
         </div>
       </div>
     </div>
-
-    <div class="card tree-card" *ngIf="shouldShowBst()">
-      <div class="card-header card-header-warning">
-        <h4 class="card-title">Árbol BST</h4>
-        <p class="card-category">Comparación sin balanceo</p>
-      </div>
-      <div class="card-body tree-canvas">
-        <div class="tree-scroll">
-          <ng-container *ngIf="bstTree?.root; else emptyBstTree">
-            <ng-container *ngTemplateOutlet="nodeTemplate; context: { $implicit: bstTree.root }"></ng-container>
-          </ng-container>
-        </div>
-      </div>
+    <div class="modal-body" *ngIf="!metrics">
+      <p>No hay métricas disponibles. Carga un árbol primero.</p>
     </div>
   </div>
+</div>
 
   <ng-template #emptyTree>
     <p class="empty-state">No hay un árbol AVL cargado todavía.</p>
