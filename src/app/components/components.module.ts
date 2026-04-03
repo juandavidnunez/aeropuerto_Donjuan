@@ -6,6 +6,8 @@ import { FooterComponent } from './footer/footer.component';
 import { NavbarComponent } from './navbar/navbar.component';
 import { SidebarComponent } from './sidebar/sidebar.component';
 
+// TAREA 7
+import { AvlAuditComponent } from './stress-panel/avl-audit/avl-audit.component';
 
 @NgModule({
   imports: [
@@ -16,12 +18,17 @@ import { SidebarComponent } from './sidebar/sidebar.component';
     FooterComponent,
     NavbarComponent,
     SidebarComponent,
-  
+
+    // TAREA 7
+    AvlAuditComponent,
   ],
   exports: [
     FooterComponent,
     NavbarComponent,
     SidebarComponent,
+
+    // TAREA 7
+    AvlAuditComponent,
   ]
 })
 export class ComponentsModule { }

@@ -1,0 +1,95 @@
+<!-- TAREA 7 - Sistema de Auditoría AVL -->
+<!-- Archivo: frontend/src/app/components/stress-panel/avl-audit/avl-audit.component.html -->
+
+<div class="avl-audit-container">
+
+  <!-- ── Botón principal ─────────────────────────────────────────── -->
+  <!-- Solo visible en modo estrés (el padre usa *ngIf="isStressMode") -->
+  <button class="btn-audit" (click)="runAudit()" [disabled]="isLoading">
+    <span class="btn-icon">🔍</span>
+    <span *ngIf="!isLoading">Verificar Propiedad AVL</span>
+    <span *ngIf="isLoading">Auditando árbol...</span>
+  </button>
+
+  <!-- ── Reporte ────────────────────────────────────────────────── -->
+  <div class="audit-report" *ngIf="auditResult">
+
+    <!-- Resumen general -->
+    <div class="report-summary" [ngClass]="auditResult.valid ? 'valid' : 'invalid'">
+      <span class="status-icon">{{ auditResult.valid ? '✅' : '❌' }}</span>
+      <div class="summary-text">
+        <p class="report-main">
+          {{ auditResult.valid
+              ? 'La propiedad AVL se CUMPLE en todos los nodos.'
+              : 'La propiedad AVL se VIOLA en ' + auditResult.inconsistent_nodes.length + ' nodo(s).' }}
+        </p>
+        <p class="report-meta">
+          Nodos auditados: <strong>{{ auditResult.total_nodes_checked }}</strong>
+          &nbsp;|&nbsp;
+          Nodos inconsistentes: <strong>{{ auditResult.inconsistent_nodes.length }}</strong>
+        </p>
+      </div>
+    </div>
+
+    <!-- Tabla de nodos inconsistentes -->
+    <div class="inconsistent-section" *ngIf="!auditResult.valid">
+      <h4 class="section-title">Nodos con violaciones detectadas</h4>
+
+      <div class="node-card" *ngFor="let node of auditResult.inconsistent_nodes">
+        <div class="node-header">
+          <span class="node-code">{{ node.code }}</span>
+        </div>
+
+        <div class="node-details">
+
+          <!-- Altura -->
+          <div class="detail-row">
+            <span class="detail-label">Altura almacenada:</span>
+            <span class="detail-value"
+              [ngClass]="node.stored_height !== node.expected_height ? 'bad' : 'ok'">
+              {{ node.stored_height }}
+            </span>
+            <span class="detail-arrow">→ esperada:</span>
+            <span class="detail-value good">{{ node.expected_height }}</span>
+          </div>
+
+          <!-- Factor de balanceo -->
+          <div class="detail-row">
+            <span class="detail-label">Factor de balanceo almacenado:</span>
+            <span class="detail-value"
+              [ngClass]="node.stored_balance !== node.expected_balance ? 'bad' : 'ok'">
+              {{ node.stored_balance }}
+            </span>
+            <span class="detail-arrow">→ real:</span>
+            <span class="detail-value"
+              [ngClass]="isViolation(node.expected_balance) ? 'bad' : 'good'">
+              {{ node.expected_balance }}
+            </span>
+          </div>
+
+          <!-- Indicador de violación AVL -->
+          <div class="issue-badge" *ngIf="isViolation(node.expected_balance)">
+            ⚠️ Factor de balanceo fuera de (-1, 0, 1)
+          </div>
+          <div class="issue-badge height-issue"
+               *ngIf="node.stored_height !== node.expected_height">
+            ⚠️ Altura incorrecta almacenada en el nodo
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- Todo OK -->
+    <div class="all-ok" *ngIf="auditResult.valid">
+      <p>Todos los <strong>{{ auditResult.total_nodes_checked }}</strong> nodos cumplen la propiedad AVL correctamente.</p>
+    </div>
+
+  </div>
+
+  <!-- Error -->
+  <div class="audit-error" *ngIf="errorMsg">
+    ⚠️ {{ errorMsg }}
+  </div>
+
+</div>

@@ -12,6 +12,9 @@ import { VersioningService } from './services/versioning.service';
 import { QueueService } from './services/queue.service';
 import { TreeViewComponent } from '../app/tree-view/tree-view.component';
 
+// TAREA 7
+import { StressService } from './services/stress.service';
+
 @NgModule({
   imports: [
     BrowserAnimationsModule,
@@ -21,18 +24,19 @@ import { TreeViewComponent } from '../app/tree-view/tree-view.component';
     ComponentsModule,
     RouterModule,
     AppRoutingModule,
-
   ],
   declarations: [
     AppComponent,
     AdminLayoutComponent,
     TreeViewComponent,
-
   ],
   providers: [
     TreeService,
     VersioningService,
-    QueueService
+    QueueService,
+
+    // TAREA 7
+    StressService,
   ],
   bootstrap: [AppComponent]
 })

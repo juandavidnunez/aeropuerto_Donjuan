@@ -1,0 +1,153 @@
+/* TAREA 7 - Sistema de Auditoría AVL */
+/* Archivo: frontend/src/app/components/stress-panel/avl-audit/avl-audit.component.scss */
+
+.avl-audit-container {
+  margin-top: 16px;
+}
+
+/* ── Botón ───────────────────────────────────────────────────────── */
+.btn-audit {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  background: linear-gradient(135deg, #7b2ff7, #9c4dff);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+  box-shadow: 0 3px 10px rgba(123, 47, 247, 0.35);
+
+  &:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
+  &:disabled             { opacity: 0.55; cursor: not-allowed; }
+  .btn-icon              { font-size: 16px; }
+}
+
+/* ── Reporte ─────────────────────────────────────────────────────── */
+.audit-report {
+  margin-top: 18px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+
+.report-summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
+
+  &.valid   { background: #e8f5e9; border-left: 5px solid #43a047; }
+  &.invalid { background: #ffebee; border-left: 5px solid #e53935; }
+
+  .status-icon  { font-size: 28px; line-height: 1; }
+
+  .report-main {
+    margin: 0 0 4px;
+    font-weight: 700;
+    font-size: 15px;
+    color: #222;
+  }
+  .report-meta {
+    margin: 0;
+    font-size: 13px;
+    color: #555;
+  }
+}
+
+/* ── Nodos inconsistentes ────────────────────────────────────────── */
+.inconsistent-section {
+  padding: 16px 20px;
+  background: #fff;
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #c62828;
+    margin: 0 0 12px;
+  }
+}
+
+.node-card {
+  background: #fff8f8;
+  border: 1px solid #ffcdd2;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 10px;
+
+  .node-header {
+    margin-bottom: 8px;
+    .node-code {
+      font-family: monospace;
+      font-size: 15px;
+      font-weight: 700;
+      color: #b71c1c;
+    }
+  }
+
+  .detail-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 13px;
+    margin-bottom: 5px;
+    color: #444;
+
+    .detail-arrow { color: #aaa; font-size: 12px; }
+
+    .detail-value {
+      font-family: monospace;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      &.bad  { background: #ffcdd2; color: #b71c1c; }
+      &.good { background: #c8e6c9; color: #2e7d32; }
+      &.ok   { background: #f5f5f5; color: #444;    }
+    }
+  }
+
+  .issue-badge {
+    margin-top: 6px;
+    display: inline-block;
+    padding: 3px 10px;
+    background: #fff3e0;
+    border: 1px solid #ffb74d;
+    border-radius: 20px;
+    font-size: 11px;
+    color: #e65100;
+    font-weight: 600;
+    margin-right: 6px;
+
+    &.height-issue {
+      background: #fce4ec;
+      border-color: #f48fb1;
+      color: #880e4f;
+    }
+  }
+}
+
+/* ── Todo OK ─────────────────────────────────────────────────────── */
+.all-ok {
+  padding: 14px 20px;
+  background: #f1f8e9;
+  p { margin: 0; font-size: 14px; color: #33691e; font-weight: 500; }
+}
+
+/* ── Error ───────────────────────────────────────────────────────── */
+.audit-error {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: #fff3e0;
+  border-left: 4px solid #ff9800;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #e65100;
+  font-weight: 500;
+}
