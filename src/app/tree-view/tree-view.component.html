@@ -84,6 +84,9 @@
       <button class="btn btn-undo" (click)="undoLastAction()" [disabled]="isLoading">
         ↩️ Deshacer acción
       </button>
+      <button class="btn btn-danger" (click)="deleteLeastProfitable()">
+  📉 Eliminar nodo de menor rentabilidad
+</button>
     </div>
     <p class="selection-hint" *ngIf="selectedNode; else selectNodeHint">
       Nodo seleccionado: <strong>{{ selectedNode.code }}</strong>. La cancelación elimina ese nodo y toda su descendencia.

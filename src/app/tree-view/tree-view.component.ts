@@ -315,6 +315,24 @@ submitForm() {
       });
     }
   }
+  deleteLeastProfitable(): void {
+  if (confirm('¿Eliminar el nodo de menor rentabilidad y toda su descendencia?')) {
+    this.flightService.deleteLeastProfitable().subscribe({
+      next: (response) => {
+        const code = response?.deleted_code ?? 'desconocido';
+        const removed = response?.nodes_removed ?? 1;
+        this.statusMessage = `✅ Nodo menos rentable (${code}) eliminado. Se eliminaron ${removed} nodo(s).`;
+        this.selectedNode = null;
+        this.refreshTrees();
+        this.loadMetrics();
+      },
+      error: (err) => {
+        console.error(err);
+        this.statusMessage = this.getFriendlyErrorMessage(err, '❌ Error al eliminar el nodo menos rentable.');
+      }
+    });
+  }
+}
 
   // Versioning methods
   openVersionModal() {
