@@ -154,6 +154,7 @@
 <!-- ============================================= -->
 <!-- VERSIONADO -->
 <!-- ============================================= -->
+<div class="features-grid">
 <div class="card version-card">
   <div class="card-header card-header-info">
     <h4 class="card-title">Versionado del Árbol</h4>
@@ -199,6 +200,118 @@
       </div>
       <div class="version-section" *ngIf="versions.length === 0">
         <p>No hay versiones guardadas aún.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================= -->
+<!-- SIMULACIÓN DE CONCURRENCIA -->
+<!-- ============================================= -->
+<div class="card concurrency-card">
+  <div class="card-header card-header-warning">
+    <h4 class="card-title">Simulación de Concurrencia</h4>
+    <p class="card-category">Cola de inserciones simultáneas</p>
+  </div>
+  <div class="card-body">
+    <div class="concurrency-buttons">
+      <button class="btn btn-warning" (click)="openQueueModal()">
+        📋 Gestionar Cola
+      </button>
+    </div>
+    <div class="queue-status" *ngIf="queueItems.length > 0">
+      <p><strong>Elementos en cola:</strong> {{ queueItems.length }}</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- MODAL PARA COLA DE CONCURRENCIA -->
+<div class="modal-overlay" *ngIf="showQueueModal" (click)="closeQueueModal()">
+  <div class="modal-container queue-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Simulación de Concurrencia</h3>
+      <button class="close-btn" (click)="closeQueueModal()">✖</button>
+    </div>
+    <div class="modal-body">
+      <div class="queue-section">
+        <h4>Agregar Vuelo a Cola</h4>
+        <div class="form-group">
+          <label>Código del vuelo</label>
+          <input class="form-control" [(ngModel)]="formData.code" placeholder="Ej: AV101">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Origen</label>
+            <input class="form-control" [(ngModel)]="formData.origin" placeholder="BOG">
+          </div>
+          <div class="form-group">
+            <label>Destino</label>
+            <input class="form-control" [(ngModel)]="formData.destination" placeholder="MED">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Precio base</label>
+            <input class="form-control" type="number" [(ngModel)]="formData.base_price" placeholder="200">
+          </div>
+          <div class="form-group">
+            <label>Pasajeros</label>
+            <input class="form-control" type="number" [(ngModel)]="formData.passengers" placeholder="150">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Promoción</label>
+            <input class="form-control" type="number" [(ngModel)]="formData.promotion" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label>Prioridad</label>
+            <select class="form-control" [(ngModel)]="formData.priority">
+              <option [value]="1">Alta (1)</option>
+              <option [value]="2">Media (2)</option>
+              <option [value]="3">Baja (3)</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-success" (click)="enqueueFlight()">➕ Agregar a Cola</button>
+      </div>
+
+      <div class="queue-section" *ngIf="queueItems.length > 0">
+        <h4>Cola de Inserciones ({{ queueItems.length }} elementos)</h4>
+        <div class="queue-list">
+          <div *ngFor="let item of queueItems; let i = index" class="queue-item">
+            <span>{{ i + 1 }}. {{ item.code }} - {{ item.origin }} → {{ item.destination }}</span>
+          </div>
+        </div>
+        <div class="queue-actions">
+          <button class="btn btn-primary" (click)="processQueueStep()" [disabled]="isProcessing">
+            {{ isProcessing ? 'Procesando...' : '▶️ Procesar Siguiente' }}
+          </button>
+          <button class="btn btn-danger" (click)="clearQueue()">🗑️ Limpiar Cola</button>
+        </div>
+      </div>
+
+      <div class="queue-section" *ngIf="processingLog.length > 0">
+        <h4>Log de Procesamiento</h4>
+        <div class="processing-log">
+          <div *ngFor="let log of processingLog" class="log-entry"
+               [ngClass]="{'success': log.status === 'inserted', 'error': log.status === 'error', 'warning': log.balance_conflicts?.length > 0}">
+            <div class="log-header">
+              <strong>{{ log.flight?.code || 'N/A' }}</strong>
+              <span class="status-badge" [ngClass]="log.status">{{ log.status }}</span>
+            </div>
+            <div class="log-details" *ngIf="log.tree_changes">
+              <small>Altura: {{ log.tree_changes.height_before }} → {{ log.tree_changes.height_after }}</small>
+              <small *ngIf="log.balance_conflicts?.length > 0" class="conflicts">
+                ⚠️ {{ log.balance_conflicts.join(', ') }}
+              </small>
+            </div>
+            <div class="log-error" *ngIf="log.error">
+              <small>❌ {{ log.error }}</small>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

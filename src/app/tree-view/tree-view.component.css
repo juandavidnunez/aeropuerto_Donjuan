@@ -50,6 +50,19 @@
   gap: 20px;
 }
 
+.features-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .tree-canvas {
   overflow-x: auto;
   padding-bottom: 14px;
@@ -418,4 +431,148 @@
 .btn-sm {
   padding: 4px 8px;
   font-size: 12px;
+}
+
+/* SIMULACIÓN DE CONCURRENCIA */
+.concurrency-card {
+  margin-top: 20px;
+}
+
+.concurrency-buttons {
+  display: flex;
+  justify-content: center;
+}
+
+.queue-status {
+  text-align: center;
+  margin-top: 10px;
+  color: #ff9800;
+  font-weight: 500;
+}
+
+.queue-modal {
+  width: 700px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.queue-section {
+  margin-bottom: 24px;
+}
+
+.queue-section h4 {
+  margin-bottom: 12px;
+  color: #3c4858;
+  border-bottom: 2px solid #ff9800;
+  padding-bottom: 8px;
+}
+
+.queue-list {
+  max-height: 150px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  margin-bottom: 12px;
+}
+
+.queue-item {
+  padding: 8px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.queue-item:last-child {
+  border-bottom: none;
+}
+
+.queue-item span {
+  font-weight: 500;
+}
+
+.queue-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.processing-log {
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+}
+
+.log-entry {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s;
+}
+
+.log-entry:last-child {
+  border-bottom: none;
+}
+
+.log-entry.success {
+  background: #e8f5e8;
+  border-left: 4px solid #4caf50;
+}
+
+.log-entry.error {
+  background: #ffebee;
+  border-left: 4px solid #f44336;
+}
+
+.log-entry.warning {
+  background: #fff3e0;
+  border-left: 4px solid #ff9800;
+}
+
+.log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.status-badge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.status-badge.inserted {
+  background: #4caf50;
+  color: white;
+}
+
+.status-badge.error {
+  background: #f44336;
+  color: white;
+}
+
+.status-badge.empty {
+  background: #9e9e9e;
+  color: white;
+}
+
+.log-details {
+  color: #666;
+  margin-top: 4px;
+}
+
+.log-details small {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.conflicts {
+  color: #ff9800;
+  font-weight: 500;
+}
+
+.log-error {
+  color: #f44336;
+  margin-top: 4px;
 }

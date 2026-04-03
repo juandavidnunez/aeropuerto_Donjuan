@@ -3,6 +3,7 @@ import { forkJoin } from 'rxjs';
 import { FlightService } from 'app/services/flight.service';
 import { TreeService } from '../services/tree.service';
 import { VersioningService } from '../services/versioning.service';
+import { QueueService } from '../services/queue.service';
 
 
 @Component({
@@ -25,6 +26,12 @@ export class TreeViewComponent implements OnInit {
   versions: string[] = [];
   newVersionName: string = '';
   showVersionModal: boolean = false;
+
+  // Queue
+  queueItems: any[] = [];
+  isProcessing: boolean = false;
+  processingLog: any[] = [];
+  showQueueModal: boolean = false;
 showModal: boolean = false;
 modalTitle: string = '';
 formData: any = {
@@ -38,7 +45,7 @@ formData: any = {
 };
 
     constructor(
-    private treeService: TreeService, private flightService: FlightService, private versioningService: VersioningService) { }
+    private treeService: TreeService, private flightService: FlightService, private versioningService: VersioningService, private queueService: QueueService) { }
 
   ngOnInit(): void {
     this.refreshTrees();
@@ -359,6 +366,113 @@ submitForm() {
         error: (error) => {
           console.error('Error deleting version:', error);
           this.statusMessage = '❌ Error al eliminar la versión.';
+        }
+      });
+    }
+  }
+
+  // Queue methods
+  openQueueModal() {
+    this.showQueueModal = true;
+    this.loadQueue();
+  }
+
+  closeQueueModal() {
+    this.showQueueModal = false;
+  }
+
+  loadQueue() {
+    this.queueService.getQueue().subscribe({
+      next: (response) => {
+        this.queueItems = response.items || [];
+      },
+      error: (error) => {
+        console.error('Error loading queue:', error);
+      }
+    });
+  }
+
+  enqueueFlight() {
+    // Use the same form data from the modal
+    if (!this.formData.code || !this.formData.origin || !this.formData.destination) {
+      alert('Por favor complete los campos obligatorios: código, origen y destino.');
+      return;
+    }
+
+    this.queueService.enqueue(this.formData).subscribe({
+      next: (response) => {
+        this.statusMessage = `✅ Vuelo "${this.formData.code}" agregado a la cola. Cola: ${response.queue_length} elementos.`;
+        this.loadQueue();
+        // Reset form but keep modal open for more additions
+        this.formData = {
+          code: '',
+          origin: '',
+          destination: '',
+          base_price: 0,
+          passengers: 0,
+          promotion: 0,
+          priority: 1
+        };
+      },
+      error: (error) => {
+        console.error('Error enqueuing flight:', error);
+        this.statusMessage = '❌ Error al agregar vuelo a la cola.';
+      }
+    });
+  }
+
+  processQueueStep() {
+    if (this.isProcessing) return;
+
+    this.isProcessing = true;
+    this.queueService.processStep().subscribe({
+      next: (result) => {
+        if (result.status === 'empty') {
+          this.statusMessage = '📭 La cola está vacía.';
+          this.isProcessing = false;
+          return;
+        }
+
+        // Add to processing log
+        this.processingLog.unshift(result);
+
+        // Update tree display
+        this.refreshTrees();
+
+        // Show conflicts if any
+        if (result.balance_conflicts && result.balance_conflicts.length > 0) {
+          const conflicts = result.balance_conflicts.join(', ');
+          this.statusMessage = `⚠️ Vuelo ${result.flight?.code} insertado con conflictos: ${conflicts}`;
+        } else if (result.status === 'inserted') {
+          this.statusMessage = `✅ Vuelo ${result.flight?.code} insertado correctamente.`;
+        } else if (result.status === 'error') {
+          this.statusMessage = `❌ Error al insertar vuelo ${result.flight?.code}: ${result.error}`;
+        }
+
+        // Update queue
+        this.loadQueue();
+
+        this.isProcessing = false;
+      },
+      error: (error) => {
+        console.error('Error processing step:', error);
+        this.statusMessage = '❌ Error al procesar el paso.';
+        this.isProcessing = false;
+      }
+    });
+  }
+
+  clearQueue() {
+    if (confirm('¿Limpiar toda la cola de inserciones?')) {
+      this.queueService.clearQueue().subscribe({
+        next: () => {
+          this.statusMessage = '🧹 Cola limpiada correctamente.';
+          this.queueItems = [];
+          this.processingLog = [];
+        },
+        error: (error) => {
+          console.error('Error clearing queue:', error);
+          this.statusMessage = '❌ Error al limpiar la cola.';
         }
       });
     }
