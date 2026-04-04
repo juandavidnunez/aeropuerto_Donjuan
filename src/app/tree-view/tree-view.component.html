@@ -16,17 +16,17 @@
         </div>
 
         <div class="control-block">
-          <label for="initialDepth">Profundidad Crítica Inicial</label>
+          <label for="initialDepth">Profundidad Crítica Inicial <span class="text-danger">*</span></label>
           <input
             id="initialDepth"
             type="number"
             class="form-control"
             [(ngModel)]="criticalDepth"
-            (change)="applyDepthPenalty()"
             min="0"
             max="20"
           >
           <small class="text-muted">Nodos con profundidad > {{ criticalDepth }} reciben +25%</small>
+          <small class="text-danger" *ngIf="!isCriticalDepthValid()">⚠️ Profundidad crítica es requerida</small>
         </div>
 
         <div class="control-block file-block">
@@ -37,11 +37,33 @@
             type="file"
             accept=".json,application/json"
             (change)="onFileSelected($event)"
+            [disabled]="!isCriticalDepthValid()"
           />
+          <small class="text-danger" *ngIf="!isCriticalDepthValid()">⚠️ Primero define la profundidad crítica</small>
         </div>
 
         <button class="btn btn-primary" type="button" (click)="refreshTrees()" [disabled]="isLoading">
           {{ isLoading ? 'Cargando...' : 'Recargar vista' }}
+        </button>
+      </div>
+
+      <!-- Modo Estrés -->
+      <div class="stress-controls" *ngIf="metrics">
+        <button 
+          class="btn btn-warning" 
+          type="button" 
+          (click)="activateStressMode()" 
+          [disabled]="stressModeActive"
+          *ngIf="!stressModeActive">
+          🔴 Activar Modo Estrés
+        </button>
+        <button 
+          class="btn btn-success" 
+          type="button" 
+          (click)="rebalanceGlobal()" 
+          [disabled]="!stressModeActive"
+          *ngIf="stressModeActive">
+          ✅ Rebalanceo Global
         </button>
       </div>
 

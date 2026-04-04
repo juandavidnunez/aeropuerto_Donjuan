@@ -5,12 +5,13 @@ import { TreeService } from '../services/tree.service';
 import { VersioningService } from '../services/versioning.service';
 import { QueueService } from '../services/queue.service';
 import { MetricsService } from '../services/metrics.service';
+import { StressService } from '../services/stress.service';
 
 
 @Component({
   selector: 'app-tree-view',
   templateUrl: './tree-view.component.html',
-  styleUrls: ['./tree-view.component.css', './critical-depth-styles.css']
+  styleUrls: ['./tree-view.component.css', './critical-depth-styles.css', './stress-mode-styles.css']
 })
 export class TreeViewComponent implements OnInit {
   avlTree: any = { root: null };
@@ -53,8 +54,13 @@ formData: any = {
   criticalDepth: number = 5;
   criticalNodesCount: number = 0;
 
+  // Modo Estrés
+  stressModeActive: boolean = false;
+  rebalanceStats: any = null;
+  showAuditModal: boolean = false;
+
     constructor(
-    private treeService: TreeService, private flightService: FlightService, private versioningService: VersioningService, private queueService: QueueService, private metricsService: MetricsService) { }
+    private treeService: TreeService, private flightService: FlightService, private versioningService: VersioningService, private queueService: QueueService, private metricsService: MetricsService,   private stressService: StressService) { }
 
   ngOnInit(): void {
     console.log('🟢 TreeViewComponent.ngOnInit() - Iniciando componente');
@@ -70,6 +76,12 @@ formData: any = {
     const file = input.files && input.files[0];
 
     if (!file) {
+      return;
+    }
+
+    // Validar que profundidad crítica esté definida
+    if (!this.isCriticalDepthValid()) {
+      this.statusMessage = '⚠️ Debes ingresar una profundidad crítica válida (0-20) antes de cargar un archivo.';
       return;
     }
 
@@ -156,36 +168,50 @@ formData: any = {
   refreshTrees(): void {
     this.isLoading = true;
 
-    forkJoin({
-      avlTree: this.treeService.getTree('avl'),
-      bstTree: this.treeService.getTree('bst'),
-      avlStats: this.treeService.getStats('avl'),
-      bstStats: this.treeService.getStats('bst'),
-      metrics: this.metricsService.getMetrics()
-    }).subscribe({
-      next: ({ avlTree, bstTree, avlStats, bstStats, metrics }) => {
-        this.avlTree = avlTree || { root: null };
-        this.bstTree = bstTree || { root: null };
-        this.avlStats = avlStats || null;
-        this.bstStats = bstStats || null;
-        this.metrics = metrics || null;
+    // Primero, aplicar cambios de profundidad crítica si hay cambios pendientes
+    // Esto guarda un snapshot en el undo_stack del backend
+    this.treeService.setCriticalDepth(this.criticalDepth).subscribe({
+      next: () => {
+        console.log(`✅ Profundidad crítica aplicada: ${this.criticalDepth}`);
+        
+        // Luego recargar los árboles con los cambios aplicados
+        forkJoin({
+          avlTree: this.treeService.getTree('avl'),
+          bstTree: this.treeService.getTree('bst'),
+          avlStats: this.treeService.getStats('avl'),
+          bstStats: this.treeService.getStats('bst'),
+          metrics: this.metricsService.getMetrics()
+        }).subscribe({
+          next: ({ avlTree, bstTree, avlStats, bstStats, metrics }) => {
+            this.avlTree = avlTree || { root: null };
+            this.bstTree = bstTree || { root: null };
+            this.avlStats = avlStats || null;
+            this.bstStats = bstStats || null;
+            this.metrics = metrics || null;
 
-        if (this.avlTree?.root) {
-          this.statusMessage = 'Árbol cargado y listo para visualizar.';
-          
-          // Log para debuggear nodos críticos
-          this.countCriticalNodes();
-          console.log(`📊 Árbol recargado - Profundidad crítica: ${this.criticalDepth}, Nodos críticos: ${this.criticalNodesCount}`);
-        }
+            if (this.avlTree?.root) {
+              this.statusMessage = 'Árbol cargado y listo para visualizar.';
+              
+              // Log para debuggear nodos críticos
+              this.countCriticalNodes();
+              console.log(`📊 Árbol recargado - Profundidad crítica: ${this.criticalDepth}, Nodos críticos: ${this.criticalNodesCount}`);
+            }
 
-        this.isLoading = false;
+            this.isLoading = false;
+          },
+          error: (error) => {
+            console.error('Error al obtener el árbol:', error);
+            this.statusMessage = this.getFriendlyErrorMessage(
+              error,
+              'Error al recargar el árbol.'
+            );
+            this.isLoading = false;
+          }
+        });
       },
       error: (error) => {
-        console.error('Error al obtener el árbol:', error);
-        this.statusMessage = this.getFriendlyErrorMessage(
-          error,
-          'Aún no hay datos cargados. Selecciona un archivo JSON.'
-        );
+        console.error('Error al aplicar profundidad crítica:', error);
+        this.statusMessage = 'Error al aplicar profundidad crítica. Intenta de nuevo.';
         this.isLoading = false;
       }
     });
@@ -304,6 +330,7 @@ submitForm() {
         this.statusMessage = '↩️ Última acción deshecha correctamente.';
         this.selectedNode = null;
         this.refreshTrees();
+        this.loadCriticalDepth(); // Recargar profundidad crítica después de deshacer
         this.loadMetrics(); // Asegurar que las métricas se actualicen
       },
       error: (err) => {
@@ -311,6 +338,40 @@ submitForm() {
         this.statusMessage = this.getFriendlyErrorMessage(err, 'No hay acciones para deshacer.');
       }
     });
+  }
+
+  // Modo Estrés
+  activateStressMode(): void {
+    if (confirm('¿Activar Modo Estrés? El árbol dejará de balancearse automáticamente y puede degradarse.')) {
+      this.stressService.activateStressMode().subscribe({
+        next: () => {
+          this.stressModeActive = true;
+          this.statusMessage = '🔴 Modo Estrés ACTIVADO - El árbol no se balanceará automáticamente';
+          this.refreshTrees();
+        },
+        error: (err) => {
+          console.error('Error activando modo estrés:', err);
+          this.statusMessage = '❌ Error al activar modo estrés';
+        }
+      });
+    }
+  }
+
+  rebalanceGlobal(): void {
+    if (confirm('¿Ejecutar Rebalanceo Global? Esto detectará y corregirá todos los nodos desbalanceados.')) {
+      this.stressService.rebalance().subscribe({
+        next: (response) => {
+          this.stressModeActive = false;
+          this.rebalanceStats = response.rebalance_stats;
+          this.statusMessage = '✅ Rebalanceo Global completado - Árbol balanceado nuevamente';
+          this.refreshTrees();
+        },
+        error: (err) => {
+          console.error('Error en rebalanceo:', err);
+          this.statusMessage = '❌ Error en rebalanceo global';
+        }
+      });
+    }
   }
 
   // Eliminar nodo
@@ -546,6 +607,8 @@ submitForm() {
     this.metricsService.getMetrics().subscribe({
       next: (response) => {
         this.metrics = response;
+        // Sincronizar estado del modo estrés
+        this.stressModeActive = response.stress_mode || false;
       },
       error: (error) => {
         console.error('Error loading metrics:', error);
@@ -584,24 +647,12 @@ submitForm() {
   }
 
   applyDepthPenalty() {
-    console.log(`📏 Aplicando penalización - Llamando PUT /api/tree/critical-depth/${this.criticalDepth}`);
-    
-    this.treeService.setCriticalDepth(this.criticalDepth).subscribe({
-      next: (response) => {
-        console.log('✅ Penalización aplicada correctamente:', response);
-        this.statusMessage = `✅ Penalización aplicada: profundidad crítica = ${this.criticalDepth}`;
-        
-        // Recargar el árbol para ver los cambios visuales
-        this.refreshTrees();
-        
-        // Contar nodos críticos después de actualizar
-        this.countCriticalNodes();
-      },
-      error: (err) => {
-        console.error('❌ Error al aplicar penalización:', err);
-        this.statusMessage = '❌ Error al aplicar penalización';
-      }
-    });
+    console.log(`📏 Profundidad crítica cambiada a ${this.criticalDepth} - Presiona "Recargar vista" para aplicar`);
+    this.statusMessage = `Profundidad crítica set a ${this.criticalDepth}. Presiona "Recargar vista" para aplicar cambios.`;
+  }
+
+  isCriticalDepthValid(): boolean {
+    return typeof this.criticalDepth === 'number' && this.criticalDepth >= 0 && this.criticalDepth <= 20;
   }
 
   countCriticalNodes() {
