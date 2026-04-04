@@ -47,30 +47,13 @@
         </button>
       </div>
 
-      <!-- Modo Estrés -->
-      <div class="stress-controls" *ngIf="metrics">
-        <button 
-          class="btn btn-warning" 
-          type="button" 
-          (click)="activateStressMode()" 
-          [disabled]="stressModeActive"
-          *ngIf="!stressModeActive">
-          🔴 Activar Modo Estrés
-        </button>
-        <button 
-          class="btn btn-success" 
-          type="button" 
-          (click)="rebalanceGlobal()" 
-          [disabled]="!stressModeActive"
-          *ngIf="stressModeActive">
-          ✅ Rebalanceo Global
-        </button>
-      </div>
-
       <p class="file-name" *ngIf="selectedFileName"><strong>Archivo:</strong> {{ selectedFileName }}</p>
       <p class="status-message">{{ statusMessage }}</p>
     </div>
   </div>
+
+  <!-- Panel de Estrés -->
+  <app-stress-panel></app-stress-panel>
 
   <div class="stats-grid">
     <div class="card stat-card">
@@ -531,17 +514,6 @@
             <span *ngFor="let code of metrics.inorder; let i = index" class="code-chip">
               {{ code }}{{ i < metrics.inorder.length - 1 ? ',' : '' }}
             </span>
-          </div>
-        </div>
-      </div>
-
-      <div class="metrics-section" *ngIf="metrics.stress_mode">
-        <h4>⚠️ Modo Estrés Activado</h4>
-        <p>El árbol está operando en modo estrés. Las rotaciones están deshabilitadas para simular un árbol desbalanceado.</p>
-        <div class="stress-info">
-          <div class="metric-card">
-            <div class="metric-title">Profundidad Crítica</div>
-            <div class="metric-value">{{ metrics.critical_depth || 0 }}</div>
           </div>
         </div>
       </div>

@@ -8,6 +8,7 @@ import { SidebarComponent } from './sidebar/sidebar.component';
 
 // TAREA 7
 import { AvlAuditComponent } from './stress-panel/avl-audit/avl-audit.component';
+import { StressPanelComponent } from './stress-panel/stress-panel.component';
 
 @NgModule({
   imports: [
@@ -21,6 +22,7 @@ import { AvlAuditComponent } from './stress-panel/avl-audit/avl-audit.component'
 
     // TAREA 7
     AvlAuditComponent,
+    StressPanelComponent,
   ],
   exports: [
     FooterComponent,
@@ -29,6 +31,7 @@ import { AvlAuditComponent } from './stress-panel/avl-audit/avl-audit.component'
 
     // TAREA 7
     AvlAuditComponent,
+    StressPanelComponent,
   ]
 })
 export class ComponentsModule { }

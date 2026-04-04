@@ -1,0 +1,20 @@
+<div class="card action-card">
+  <div class="card-header card-header-warning">
+    <h4 class="card-title">🔴 Modo Estrés</h4>
+    <p class="card-category">Simulación de árbol desbalanceado y auditoría AVL</p>
+  </div>
+  <div class="card-body">
+    <div class="action-buttons">
+      <button class="btn btn-warning" (click)="activateStressMode()" *ngIf="!isStressMode">
+        🔴 Activar Modo Estrés
+      </button>
+      <button class="btn btn-success" (click)="rebalanceGlobal()" *ngIf="isStressMode">
+        ✅ Rebalanceo Global
+      </button>
+    </div>
+    <div class="stress-mode-active" *ngIf="isStressMode">
+      <p>Modo estrés activo. El árbol no se balanceará automáticamente.</p>
+      <app-avl-audit></app-avl-audit>
+    </div>
+  </div>
+</div>

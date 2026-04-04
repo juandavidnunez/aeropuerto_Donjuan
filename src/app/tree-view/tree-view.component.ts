@@ -5,13 +5,12 @@ import { TreeService } from '../services/tree.service';
 import { VersioningService } from '../services/versioning.service';
 import { QueueService } from '../services/queue.service';
 import { MetricsService } from '../services/metrics.service';
-import { StressService } from '../services/stress.service';
 
 
 @Component({
   selector: 'app-tree-view',
   templateUrl: './tree-view.component.html',
-  styleUrls: ['./tree-view.component.css', './critical-depth-styles.css', './stress-mode-styles.css']
+  styleUrls: ['./tree-view.component.css', './critical-depth-styles.css']
 })
 export class TreeViewComponent implements OnInit {
   avlTree: any = { root: null };
@@ -54,13 +53,8 @@ formData: any = {
   criticalDepth: number = 5;
   criticalNodesCount: number = 0;
 
-  // Modo Estrés
-  stressModeActive: boolean = false;
-  rebalanceStats: any = null;
-  showAuditModal: boolean = false;
-
     constructor(
-    private treeService: TreeService, private flightService: FlightService, private versioningService: VersioningService, private queueService: QueueService, private metricsService: MetricsService,   private stressService: StressService) { }
+    private treeService: TreeService, private flightService: FlightService, private versioningService: VersioningService, private queueService: QueueService, private metricsService: MetricsService) { }
 
   ngOnInit(): void {
     console.log('🟢 TreeViewComponent.ngOnInit() - Iniciando componente');
@@ -340,40 +334,6 @@ submitForm() {
     });
   }
 
-  // Modo Estrés
-  activateStressMode(): void {
-    if (confirm('¿Activar Modo Estrés? El árbol dejará de balancearse automáticamente y puede degradarse.')) {
-      this.stressService.activateStressMode().subscribe({
-        next: () => {
-          this.stressModeActive = true;
-          this.statusMessage = '🔴 Modo Estrés ACTIVADO - El árbol no se balanceará automáticamente';
-          this.refreshTrees();
-        },
-        error: (err) => {
-          console.error('Error activando modo estrés:', err);
-          this.statusMessage = '❌ Error al activar modo estrés';
-        }
-      });
-    }
-  }
-
-  rebalanceGlobal(): void {
-    if (confirm('¿Ejecutar Rebalanceo Global? Esto detectará y corregirá todos los nodos desbalanceados.')) {
-      this.stressService.rebalance().subscribe({
-        next: (response) => {
-          this.stressModeActive = false;
-          this.rebalanceStats = response.rebalance_stats;
-          this.statusMessage = '✅ Rebalanceo Global completado - Árbol balanceado nuevamente';
-          this.refreshTrees();
-        },
-        error: (err) => {
-          console.error('Error en rebalanceo:', err);
-          this.statusMessage = '❌ Error en rebalanceo global';
-        }
-      });
-    }
-  }
-
   // Eliminar nodo
   deleteNode() {
     if (!this.selectedNode) return;
@@ -607,8 +567,6 @@ submitForm() {
     this.metricsService.getMetrics().subscribe({
       next: (response) => {
         this.metrics = response;
-        // Sincronizar estado del modo estrés
-        this.stressModeActive = response.stress_mode || false;
       },
       error: (error) => {
         console.error('Error loading metrics:', error);
