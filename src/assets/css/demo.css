@@ -33,3 +33,30 @@
   position: absolute;
   width: 260px;
 }
+
+/* ============================================ */
+/* AJUSTES PARA ELIMINAR EL SIDEBAR */
+/* ============================================ */
+
+.wrapper {
+  margin-left: 0 !important;
+}
+
+.main-panel {
+  width: 100% !important;
+  margin-left: 0 !important;
+}
+
+.sidebar {
+  display: none !important;
+}
+
+/* Ajuste para que el contenido ocupe todo el ancho */
+.main-panel .content {
+  padding: 20px;
+}
+
+/* Si el navbar tiene margen, ajustarlo */
+.navbar {
+  margin-left: 0 !important;
+}
