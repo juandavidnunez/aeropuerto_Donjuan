@@ -1,0 +1,138 @@
+/* Penalización por Profundidad Crítica */
+
+/* Control en la barra de carga */
+#initialDepth {
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-size: 14px;
+}
+
+#initialDepth:focus {
+  outline: none;
+  border-color: #ff5733;
+  box-shadow: 0 0 6px rgba(255, 87, 51, 0.2);
+}
+
+.text-muted {
+  color: #999;
+  font-size: 12px;
+  display: block;
+  margin-top: 4px;
+}
+
+.critical-depth-control {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 8px;
+}
+
+.depth-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 200px;
+}
+
+.depth-input-group label {
+  font-weight: 600;
+  color: #3c4858;
+  font-size: 14px;
+}
+
+.depth-input {
+  min-width: 120px;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.depth-input:focus {
+  outline: none;
+  border-color: #ff5733;
+  box-shadow: 0 0 6px rgba(255, 87, 51, 0.2);
+}
+
+.depth-help {
+  font-size: 12px;
+  color: #666;
+  font-style: italic;
+}
+
+.critical-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #fff3cd;
+  border-left: 4px solid #ff9800;
+  border-radius: 4px;
+  margin-top: 16px;
+}
+
+.info-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.info-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #333;
+}
+
+.info-text strong {
+  color: #ff6f00;
+  font-size: 16px;
+}
+
+.info-note {
+  font-size: 12px;
+  color: #666;
+  font-style: italic;
+}
+
+/* Nodo crítico en árbol - estilos mejorados */
+.node-box.critical {
+  border: 2px solid #ff9800;
+  background: linear-gradient(180deg, #fff8f0 0%, #ffe8cc 100%);
+  box-shadow: 0 6px 18px rgba(255, 152, 0, 0.15);
+  position: relative;
+}
+
+.node-box.critical::after {
+  content: '⚠️';
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 16px;
+  background: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Badge de penalización dentro del nodo crítico */
+.critical-badge {
+  display: inline-block;
+  background: #ffb74d;
+  color: white;
+  padding: 3px 6px;
+  border-radius: 3px;
+  font-weight: bold;
+  font-size: 11px;
+  margin-top: 4px;
+  white-space: nowrap;
+}
+

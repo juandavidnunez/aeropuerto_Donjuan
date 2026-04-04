@@ -10,7 +10,7 @@ import { MetricsService } from '../services/metrics.service';
 @Component({
   selector: 'app-tree-view',
   templateUrl: './tree-view.component.html',
-  styleUrls: ['./tree-view.component.css']
+  styleUrls: ['./tree-view.component.css', './critical-depth-styles.css']
 })
 export class TreeViewComponent implements OnInit {
   avlTree: any = { root: null };
@@ -49,10 +49,16 @@ formData: any = {
   priority: 1
 };
 
+  // Penalización por profundidad crítica
+  criticalDepth: number = 5;
+  criticalNodesCount: number = 0;
+
     constructor(
     private treeService: TreeService, private flightService: FlightService, private versioningService: VersioningService, private queueService: QueueService, private metricsService: MetricsService) { }
 
   ngOnInit(): void {
+    console.log('🟢 TreeViewComponent.ngOnInit() - Iniciando componente');
+    this.loadCriticalDepth();
     this.refreshTrees();
     this.loadMetrics();
     this.loadVersions();
@@ -87,6 +93,7 @@ formData: any = {
   loadTree(data: any): void {
     this.isLoading = true;
     this.statusMessage = 'Cargando árbol desde el archivo seleccionado...';
+    console.log(`📁 loadTree() - Modo: ${this.selectedMode}, Profundidad crítica: ${this.criticalDepth}`);
 
     this.treeService.loadTree(this.selectedMode, data).subscribe({
       next: (response) => {
@@ -95,6 +102,11 @@ formData: any = {
         this.avlStats = response.avl_stats || null;
         this.bstStats = response.bst_stats || null;
         this.statusMessage = response.message || 'Árbol cargado correctamente.';
+        
+        // Contar nodos críticos después de cargar
+        this.countCriticalNodes();
+        console.log(`✅ Árbol cargado - Nodos críticos (AVL): ${this.criticalNodesCount}`);
+        
         this.isLoading = false;
         // Load metrics after tree is loaded
         this.loadMetrics();
@@ -160,6 +172,10 @@ formData: any = {
 
         if (this.avlTree?.root) {
           this.statusMessage = 'Árbol cargado y listo para visualizar.';
+          
+          // Log para debuggear nodos críticos
+          this.countCriticalNodes();
+          console.log(`📊 Árbol recargado - Profundidad crítica: ${this.criticalDepth}, Nodos críticos: ${this.criticalNodesCount}`);
         }
 
         this.isLoading = false;
@@ -176,7 +192,7 @@ formData: any = {
   }
 
   shouldShowBst(): boolean {
-    return this.selectedMode === 'insertion' || !!this.bstTree?.root;
+    return this.selectedMode === 'insertion';
   }
 
   // Seleccionar nodo al hacer clic
@@ -550,5 +566,74 @@ submitForm() {
     if (!this.metrics?.rotations) return 0;
     const rotations = this.metrics.rotations as { [key: string]: number };
     return Object.values(rotations).reduce((sum, count) => sum + count, 0);
+  }
+
+  // Penalización por Profundidad Crítica
+  loadCriticalDepth() {
+    console.log('🔵 loadCriticalDepth() - Llamando GET /api/tree/critical-depth');
+    this.treeService.getCriticalDepth().subscribe({
+      next: (response) => {
+        console.log('✅ Respuesta critical-depth:', response);
+        this.criticalDepth = response.critical_depth;
+        this.countCriticalNodes();
+      },
+      error: (error) => {
+        console.error('❌ Error loading critical depth:', error);
+      }
+    });
+  }
+
+  applyDepthPenalty() {
+    console.log(`📏 Aplicando penalización - Llamando PUT /api/tree/critical-depth/${this.criticalDepth}`);
+    
+    this.treeService.setCriticalDepth(this.criticalDepth).subscribe({
+      next: (response) => {
+        console.log('✅ Penalización aplicada correctamente:', response);
+        this.statusMessage = `✅ Penalización aplicada: profundidad crítica = ${this.criticalDepth}`;
+        
+        // Recargar el árbol para ver los cambios visuales
+        this.refreshTrees();
+        
+        // Contar nodos críticos después de actualizar
+        this.countCriticalNodes();
+      },
+      error: (err) => {
+        console.error('❌ Error al aplicar penalización:', err);
+        this.statusMessage = '❌ Error al aplicar penalización';
+      }
+    });
+  }
+
+  countCriticalNodes() {
+    let count = 0;
+    
+    const countRecursive = (node: any) => {
+      if (!node) return;
+      if (node.is_critical) count++;
+      countRecursive(node.left);
+      countRecursive(node.right);
+    };
+    
+    countRecursive(this.avlTree?.root);
+    this.criticalNodesCount = count;
+  }
+
+  buildNodeTooltip(node: any): string {
+    let tooltip = `Flight: ${node.code}\n`;
+    tooltip += `Route: ${node.origin} → ${node.destination}\n`;
+    tooltip += `Base Price: $${node.base_price}\n`;
+    tooltip += `Passengers: ${node.passengers}\n`;
+    tooltip += `Promotion: $${node.promotion || 0}\n`;
+    
+    if (node.is_critical) {
+      tooltip += `⚠️ CRITICAL NODE\n`;
+      tooltip += `Penalty (+25%): $${node.penalty}\n`;
+    } else {
+      tooltip += `Penalty: $0\n`;
+    }
+    
+    tooltip += `Final Price: $${node.final_price}`;
+    
+    return tooltip;
   }
 }

@@ -15,6 +15,20 @@
           </select>
         </div>
 
+        <div class="control-block">
+          <label for="initialDepth">Profundidad Crítica Inicial</label>
+          <input
+            id="initialDepth"
+            type="number"
+            class="form-control"
+            [(ngModel)]="criticalDepth"
+            (change)="applyDepthPenalty()"
+            min="0"
+            max="20"
+          >
+          <small class="text-muted">Nodos con profundidad > {{ criticalDepth }} reciben +25%</small>
+        </div>
+
         <div class="control-block file-block">
           <label for="jsonFile">Archivo JSON</label>
           <input
@@ -249,6 +263,46 @@
       </div>
       <div class="queue-status" *ngIf="queueItems.length > 0">
         <p><strong>Elementos en cola:</strong> {{ queueItems.length }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================= -->
+<!-- PENALIZACIÓN POR PROFUNDIDAD CRÍTICA -->
+<!-- ============================================= -->
+<div class="card action-card">
+  <div class="card-header card-header-danger">
+    <h4 class="card-title">📏 Penalización por Profundidad Crítica</h4>
+    <p class="card-category">Nodos profundos reciben +25% en el precio</p>
+  </div>
+  <div class="card-body">
+    <div class="critical-depth-control">
+      <div class="depth-input-group">
+        <label for="criticalDepth">Profundidad crítica:</label>
+        <input 
+          id="criticalDepth"
+          type="number" 
+          class="form-control depth-input"
+          [(ngModel)]="criticalDepth"
+          (change)="applyDepthPenalty()"
+          min="0"
+          max="20"
+        >
+        <span class="depth-help">Nodos con profundidad > {{ criticalDepth }} recibirán +25%</span>
+      </div>
+      
+      <button class="btn btn-danger" (click)="applyDepthPenalty()">
+        🔄 Aplicar Penalización
+      </button>
+    </div>
+    
+    <!-- Información de nodos críticos -->
+    <div class="critical-info" *ngIf="criticalNodesCount > 0">
+      <div class="info-icon">⚠️</div>
+      <div class="info-text">
+        <strong>{{ criticalNodesCount }}</strong> nodo(s) en profundidad crítica
+        <span class="info-note">(precio incrementado +25%)</span>
       </div>
     </div>
   </div>

@@ -45,4 +45,12 @@ export class TreeService {
   undoLastAction(): Observable<any> {
     return this.http.post(`${this.apiUrl}/undo`, {});
   }
+
+  getCriticalDepth(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/critical-depth`);
+  }
+
+  setCriticalDepth(depth: number): Observable<any> {
+    return this.http.put(`${this.apiUrl}/critical-depth/${depth}`, {});
+  }
 }
