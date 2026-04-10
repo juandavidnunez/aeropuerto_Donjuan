@@ -70,12 +70,14 @@
 .tree-canvas {
   max-height: none;
   padding-bottom: 24px;
+  overflow: hidden;
 }
 
 .tree-scroll {
   min-width: 100%;
   max-width: 100%;
   padding: 8px 16px 60px;
+  overflow: auto;
 }
 
 .tree-list {
@@ -89,7 +91,8 @@
   margin: 0;
   padding-left: 0;
   position: relative;
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
 }
 
 .tree-list {

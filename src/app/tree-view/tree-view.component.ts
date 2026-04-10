@@ -142,11 +142,14 @@ export class TreeViewComponent implements OnInit, AfterViewInit {
 
     this.treeScrolls.forEach((scroll) => {
       const container = scroll.nativeElement as HTMLElement;
-      const content = container.querySelector('.tree-list') as HTMLElement | null;
+      const content = container.querySelector(':scope > .tree-list') as HTMLElement | null;
       if (!content) {
         this.renderer.removeStyle(container, 'transform');
         return;
       }
+
+      // Reset before measuring so each recalculation starts from the natural tree size.
+      this.renderer.setStyle(content, 'transform', 'scale(1)');
 
       const canvas = container.parentElement as HTMLElement | null;
       const parentWidth = canvas ? canvas.clientWidth : container.clientWidth;
@@ -160,7 +163,7 @@ export class TreeViewComponent implements OnInit, AfterViewInit {
 
       const widthScale = parentWidth / contentWidth;
       const heightScale = parentHeight / contentHeight;
-      const scale = Math.min(0.9, widthScale, heightScale);
+      const scale = Math.max(0.05, Math.min(0.9, widthScale, heightScale));
       this.renderer.setStyle(content, 'transform', `scale(${scale})`);
       this.renderer.setStyle(content, 'transformOrigin', 'top center');
     });
