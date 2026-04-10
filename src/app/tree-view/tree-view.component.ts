@@ -111,31 +111,25 @@ export class TreeViewComponent implements OnInit, AfterViewInit {
   }
 
   detectMode(data: any, fileName: string = ''): 'topology' | 'insertion' {
-    const rawMode = String(data?.mode || data?.modo || '').trim().toLowerCase();
-    if (['topology', 'topologia'].includes(rawMode)) return 'topology';
-    if (['insertion', 'insercion'].includes(rawMode)) return 'insertion';
-
-    // Inserción: lista de vuelos explícita
-    if (Array.isArray(data?.flights) || Array.isArray(data?.vuelos)) return 'insertion';
-
-    // Topología: nodo raíz en "tree" o estructura de nodo en la raíz
-    const candidateNode = data?.tree || data?.root || data?.arbol || data?.raiz || data;
-    if (candidateNode && typeof candidateNode === 'object') {
-      const hasCode = typeof candidateNode.code === 'string';
-      const hasTreeEdges = ('left' in candidateNode) || ('right' in candidateNode);
-      if (hasCode && hasTreeEdges) return 'topology';
+    // ✅ PRIORIDAD MÁXIMA: si tiene izquierdo/derecho, es topología
+    if (data && typeof data === 'object') {
+        if ('izquierdo' in data || 'derecho' in data || 'left' in data || 'right' in data) {
+            console.log('🎯 Detectado TOPOLOGÍA por presencia de hijos');
+            return 'topology';
+        }
     }
 
-    // Fallback heurístico: si el JSON completo es un arreglo, suele ser inserción
-    if (Array.isArray(data)) return 'insertion';
+    const rawMode = String(data?.mode || data?.modo || '').trim().toLowerCase();
+    if (rawMode === 'topology' || rawMode === 'topologia') return 'topology';
+    if (rawMode === 'insertion' || rawMode === 'insercion') return 'insertion';
 
-    // Fallback por nombre de archivo (ej: topologia1.json, insertion_data.json)
-    const normalizedName = String(fileName).toLowerCase();
+    if (Array.isArray(data?.flights) || Array.isArray(data?.vuelos)) return 'insertion';
+
+    const normalizedName = fileName.toLowerCase();
     if (normalizedName.includes('topologia') || normalizedName.includes('topology')) return 'topology';
-    if (normalizedName.includes('insercion') || normalizedName.includes('insertion')) return 'insertion';
 
     return this.selectedMode;
-  }
+}
 
   updateTreeScale(): void {
     if (!this.treeScrolls || this.treeScrolls.length === 0) return;
