@@ -1,211 +1,179 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { AfterViewInit, Component, ElementRef, HostListener, OnInit, QueryList, Renderer2, ViewChildren } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { FlightService } from 'app/services/flight.service';
 import { TreeService } from '../services/tree.service';
-import { VersioningService } from '../services/versioning.service';
-import { QueueService } from '../services/queue.service';
-import { MetricsService } from '../services/metrics.service';
-
 
 @Component({
   selector: 'app-tree-view',
   templateUrl: './tree-view.component.html',
   styleUrls: ['./tree-view.component.css', './critical-depth-styles.css']
 })
-export class TreeViewComponent implements OnInit {
+export class TreeViewComponent implements OnInit, AfterViewInit {
+  @ViewChildren('treeScroll') treeScrolls!: QueryList<ElementRef<HTMLDivElement>>;
+
   avlTree: any = { root: null };
   bstTree: any = { root: null };
   avlStats: any = null;
   bstStats: any = null;
   selectedMode: 'topology' | 'insertion' = 'insertion';
   selectedFileName = '';
-  statusMessage = 'Selecciona un archivo JSON para cargar el árbol.';
+  statusMessage = 'Selecciona un archivo JSON para cargar el �rbol.';
   isLoading = false;
   selectedNode: any = null;
+  showModal: boolean = false;
+  modalTitle: string = '';
+  formData: any = {
+    code: '',
+    origin: '',
+    destination: '',
+    base_price: 0,
+    passengers: 0,
+    promotion: 0,
+    priority: 1
+  };
 
-  // Versioning
-  versions: string[] = [];
-  newVersionName: string = '';
-  showVersionModal: boolean = false;
-
-  // Queue
-  queueItems: any[] = [];
-  isProcessing: boolean = false;
-  processingLog: any[] = [];
-  showQueueModal: boolean = false;
-
-  // Metrics
-  metrics: any = null;
-  showMetricsModal: boolean = false;
-showModal: boolean = false;
-modalTitle: string = '';
-formData: any = {
-  code: '',
-  origin: '',
-  destination: '',
-  base_price: 0,
-  passengers: 0,
-  promotion: 0,
-  priority: 1
-};
-
-  // Penalización por profundidad crítica
   criticalDepth: number = 5;
   criticalNodesCount: number = 0;
 
-    constructor(
-    private treeService: TreeService, private flightService: FlightService, private versioningService: VersioningService, private queueService: QueueService, private metricsService: MetricsService) { }
+  constructor(
+    private treeService: TreeService,
+    private flightService: FlightService,
+    private renderer: Renderer2
+  ) { }
 
   ngOnInit(): void {
-    console.log('🟢 TreeViewComponent.ngOnInit() - Iniciando componente');
+    console.log('TreeViewComponent.ngOnInit()');
     this.loadCriticalDepth();
-    this.refreshTrees();
-    this.loadMetrics();
-    this.loadVersions();
-    this.loadQueue();
+  }
+
+  ngAfterViewInit(): void {
+    this.updateTreeScale();
+  }
+
+  @HostListener('window:resize')
+  onResize(): void {
+    this.updateTreeScale();
   }
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files && input.files[0];
+    if (!file) return;
 
-    if (!file) {
-      return;
-    }
-
-    // Validar que profundidad crítica esté definida
     if (!this.isCriticalDepthValid()) {
-      this.statusMessage = '⚠️ Debes ingresar una profundidad crítica válida (0-20) antes de cargar un archivo.';
+      this.statusMessage = 'Debes ingresar una profundidad cr�tica v�lida (0-20)';
       return;
     }
 
     this.selectedFileName = file.name;
     const reader = new FileReader();
-
     reader.onload = () => {
       try {
         const parsedData = JSON.parse(String(reader.result));
         this.selectedMode = this.detectMode(parsedData);
         this.loadTree(parsedData);
       } catch (error) {
-        console.error('Error al leer el JSON:', error);
-        this.statusMessage = 'El archivo seleccionado no es un JSON válido.';
+        this.statusMessage = 'El archivo no es JSON v�lido.';
       }
     };
-
     reader.readAsText(file);
   }
 
   loadTree(data: any): void {
     this.isLoading = true;
-    this.statusMessage = 'Cargando árbol desde el archivo seleccionado...';
-    console.log(`📁 loadTree() - Modo: ${this.selectedMode}, Profundidad crítica: ${this.criticalDepth}`);
-
+    this.statusMessage = 'Cargando �rbol...';
     this.treeService.loadTree(this.selectedMode, data).subscribe({
       next: (response) => {
         this.avlTree = response.avl || { root: null };
         this.bstTree = response.bst || { root: null };
         this.avlStats = response.avl_stats || null;
         this.bstStats = response.bst_stats || null;
-        this.statusMessage = response.message || 'Árbol cargado correctamente.';
-        
-        // Contar nodos críticos después de cargar
+        this.statusMessage = response.message || '�rbol cargado.';
         this.countCriticalNodes();
-        console.log(`✅ Árbol cargado - Nodos críticos (AVL): ${this.criticalNodesCount}`);
-        
+        setTimeout(() => this.updateTreeScale(), 0);
         this.isLoading = false;
-        // Load metrics after tree is loaded
-        this.loadMetrics();
       },
       error: (error) => {
-        console.error('Error al cargar el árbol:', error);
-        this.statusMessage = this.getFriendlyErrorMessage(error, 'No se pudo cargar el árbol.');
+        this.statusMessage = this.getFriendlyErrorMessage(error, 'Error cargando �rbol');
         this.isLoading = false;
       }
     });
   }
 
-  private getFriendlyErrorMessage(error: any, fallbackMessage: string): string {
+  private getFriendlyErrorMessage(error: any, fallback: string): string {
     if (error?.status === 0) {
-      return 'No se pudo conectar con el backend. Verifica que Uvicorn esté corriendo en http://127.0.0.1:8000 y abre el frontend desde localhost:4200 o 127.0.0.1:4200.';
+      return 'No se pudo conectar con el backend';
     }
-
-    const detail = error?.error?.detail;
-    if (typeof detail === 'string' && detail.trim().length > 0) {
-      return detail;
-    }
-
-    return fallbackMessage;
+    return error?.error?.detail || fallback;
   }
 
   detectMode(data: any): 'topology' | 'insertion' {
-    const explicitMode = String(data?.mode || data?.modo || '').toLowerCase();
-    if (explicitMode === 'topology' || explicitMode === 'insertion') {
-      return explicitMode;
-    }
-
-    if (Array.isArray(data?.flights) || Array.isArray(data?.vuelos)) {
-      return 'insertion';
-    }
-
-    if (data && typeof data === 'object') {
-      const looksLikeTree = ['left', 'right', 'izquierdo', 'derecho', 'codigo', 'code']
-        .some((key) => key in data);
-      if (looksLikeTree) {
-        return 'topology';
-      }
-    }
-
+    const mode = String(data?.mode || data?.modo || '').toLowerCase();
+    if (mode === 'topology' || mode === 'insertion') return mode;
+    if (Array.isArray(data?.flights)) return 'insertion';
+    if (data?.left || data?.right) return 'topology';
     return this.selectedMode;
+  }
+
+  updateTreeScale(): void {
+    if (!this.treeScrolls || this.treeScrolls.length === 0) return;
+
+    this.treeScrolls.forEach((scroll) => {
+      const container = scroll.nativeElement as HTMLElement;
+      const content = container.querySelector('.tree-list') as HTMLElement | null;
+      if (!content) {
+        this.renderer.removeStyle(container, 'transform');
+        return;
+      }
+
+      const canvas = container.parentElement as HTMLElement | null;
+      const parentWidth = canvas ? canvas.clientWidth : container.clientWidth;
+      const parentHeight = canvas ? canvas.clientHeight : container.clientHeight;
+      const contentWidth = content.scrollWidth;
+      const contentHeight = content.scrollHeight;
+      if (!contentWidth || !contentHeight || !parentWidth || !parentHeight) {
+        this.renderer.removeStyle(content, 'transform');
+        return;
+      }
+
+      const widthScale = parentWidth / contentWidth;
+      const heightScale = parentHeight / contentHeight;
+      const scale = Math.min(0.9, widthScale, heightScale);
+      this.renderer.setStyle(content, 'transform', `scale(${scale})`);
+      this.renderer.setStyle(content, 'transformOrigin', 'top center');
+    });
   }
 
   refreshTrees(): void {
     this.isLoading = true;
-
-    // Primero, aplicar cambios de profundidad crítica si hay cambios pendientes
-    // Esto guarda un snapshot en el undo_stack del backend
     this.treeService.setCriticalDepth(this.criticalDepth).subscribe({
       next: () => {
-        console.log(`✅ Profundidad crítica aplicada: ${this.criticalDepth}`);
-        
-        // Luego recargar los árboles con los cambios aplicados
         forkJoin({
           avlTree: this.treeService.getTree('avl'),
           bstTree: this.treeService.getTree('bst'),
           avlStats: this.treeService.getStats('avl'),
-          bstStats: this.treeService.getStats('bst'),
-          metrics: this.metricsService.getMetrics()
+          bstStats: this.treeService.getStats('bst')
         }).subscribe({
-          next: ({ avlTree, bstTree, avlStats, bstStats, metrics }) => {
+          next: ({ avlTree, bstTree, avlStats, bstStats }) => {
             this.avlTree = avlTree || { root: null };
             this.bstTree = bstTree || { root: null };
             this.avlStats = avlStats || null;
             this.bstStats = bstStats || null;
-            this.metrics = metrics || null;
-
             if (this.avlTree?.root) {
-              this.statusMessage = 'Árbol cargado y listo para visualizar.';
-              
-              // Log para debuggear nodos críticos
+              this.statusMessage = '�rbol listo.';
               this.countCriticalNodes();
-              console.log(`📊 Árbol recargado - Profundidad crítica: ${this.criticalDepth}, Nodos críticos: ${this.criticalNodesCount}`);
             }
-
+            setTimeout(() => this.updateTreeScale(), 0);
             this.isLoading = false;
           },
-          error: (error) => {
-            console.error('Error al obtener el árbol:', error);
-            this.statusMessage = this.getFriendlyErrorMessage(
-              error,
-              'Error al recargar el árbol.'
-            );
+          error: () => {
+            this.statusMessage = 'Error recargando �rbol';
             this.isLoading = false;
           }
         });
       },
-      error: (error) => {
-        console.error('Error al aplicar profundidad crítica:', error);
-        this.statusMessage = 'Error al aplicar profundidad crítica. Intenta de nuevo.';
+      error: () => {
+        this.statusMessage = 'Error aplicando profundidad cr�tica';
         this.isLoading = false;
       }
     });
@@ -215,105 +183,77 @@ formData: any = {
     return this.selectedMode === 'insertion';
   }
 
-  // Seleccionar nodo al hacer clic
-selectNode(node: any) {
-  console.log('🖱️ SELECT NODE EJECUTADO - Nodo:', node?.code);
-  this.selectedNode = node;
-}
+  selectNode(node: any) {
+    this.selectedNode = node;
+  }
 
-// Abrir modal para insertar
-openInsertModal() {
-  this.modalTitle = 'Insertar nuevo vuelo';
-  this.formData = {
-    code: '',
-    origin: '',
-    destination: '',
-    base_price: 0,
-    passengers: 0,
-    promotion: 0,
-    priority: 1
-  };
-  this.showModal = true;
-}
+  openInsertModal() {
+    this.modalTitle = 'Insertar nuevo vuelo';
+    this.formData = {
+      code: '',
+      origin: '',
+      destination: '',
+      base_price: 0,
+      passengers: 0,
+      promotion: 0,
+      priority: 1
+    };
+    this.showModal = true;
+  }
 
-openEditModal() {
-  if (!this.selectedNode) return;
-  console.log('🖱️ OPEN EDIT MODAL EJECUTADO - Nodo:', this.selectedNode);
-  this.modalTitle = 'Editar vuelo: ' + this.selectedNode.code;
-  this.formData = { ...this.selectedNode };
-  this.showModal = true;
-}
+  openEditModal() {
+    if (!this.selectedNode) return;
+    this.modalTitle = 'Editar vuelo: ' + this.selectedNode.code;
+    this.formData = { ...this.selectedNode };
+    this.showModal = true;
+  }
 
-// Cerrar modal
-closeModal() {
-  this.showModal = false;
-}
+  closeModal() {
+    this.showModal = false;
+  }
 
-
-
-// Insertar vuelo
   insertFlight() {
     this.flightService.insert(this.formData).subscribe({
       next: () => {
-        this.statusMessage = '✅ Vuelo insertado correctamente';
+        this.statusMessage = 'Vuelo insertado';
         this.closeModal();
         this.refreshTrees();
-        this.loadMetrics(); // Asegurar que las métricas se actualicen
       },
-      error: (err) => {
-        console.error(err);
-        this.statusMessage = '❌ Error al insertar vuelo';
-      }
+      error: () => this.statusMessage = 'Error insertando vuelo'
     });
-  } 
-
-submitForm() {
-
-  console.log('📝 SUBMIT FORM - formData:', this.formData);
-  if (this.modalTitle.includes('Insertar')) {
-    this.insertFlight();
-  } else {
-    this.updateFlight();
   }
-}
 
-      updateFlight() {
+  submitForm() {
+    if (this.modalTitle.includes('Insertar')) {
+      this.insertFlight();
+    } else {
+      this.updateFlight();
+    }
+  }
 
-          console.log('📝 Actualizando vuelo:', this.selectedNode.code);
-  console.log('📦 Nuevos datosNuevos datos:', this.formData);
+  updateFlight() {
     this.flightService.update(this.selectedNode.code, this.formData).subscribe({
-      next: (response) => {
-        console.log('Respuesta del servidor', response)
-        this.statusMessage = '✅ Vuelo actualizado correctamente';
+      next: () => {
+        this.statusMessage = 'Vuelo actualizado';
         this.closeModal();
         this.selectedNode = null;
         this.refreshTrees();
-        this.loadMetrics(); // Asegurar que las métricas se actualicen
       },
-      error: (err) => {
-        console.error(err);
-        this.statusMessage = '❌ Error al actualizar vuelo';
-      }
+      error: () => this.statusMessage = 'Error actualizando vuelo'
     });
   }
 
   cancelFlight(): void {
     if (!this.selectedNode) return;
-
-    const selectedCode = this.selectedNode.code;
-    if (confirm(`¿Cancelar el vuelo ${selectedCode} y eliminar todo su subárbol?`)) {
-      this.flightService.cancel(selectedCode).subscribe({
-        next: (response) => {
-          const removedNodes = response?.nodes_removed ?? 0;
-          this.statusMessage = `✅ Cancelación masiva realizada. Se eliminaron ${removedNodes} nodo(s) desde ${selectedCode}.`;
+    const code = this.selectedNode.code;
+    if (confirm(`Cancelar ${code}?`)) {
+      this.flightService.cancel(code).subscribe({
+        next: (r) => {
+          this.statusMessage = `${r.nodes_removed} nodos eliminados`;
           this.selectedNode = null;
           this.refreshTrees();
-          this.loadMetrics(); // Asegurar que las métricas se actualicen
         },
-        error: (err) => {
-          console.error(err);
-          this.statusMessage = this.getFriendlyErrorMessage(err, '❌ Error al cancelar el vuelo.');
-        }
+        error: () => this.statusMessage = 'Error cancelando vuelo'
       });
     }
   }
@@ -321,292 +261,54 @@ submitForm() {
   undoLastAction(): void {
     this.treeService.undoLastAction().subscribe({
       next: () => {
-        this.statusMessage = '↩️ Última acción deshecha correctamente.';
+        this.statusMessage = 'Acci�n deshecha';
         this.selectedNode = null;
         this.refreshTrees();
-        this.loadCriticalDepth(); // Recargar profundidad crítica después de deshacer
-        this.loadMetrics(); // Asegurar que las métricas se actualicen
+        this.loadCriticalDepth();
       },
-      error: (err) => {
-        console.error(err);
-        this.statusMessage = this.getFriendlyErrorMessage(err, 'No hay acciones para deshacer.');
-      }
+      error: () => this.statusMessage = 'Error deshaciendo acci�n'
     });
   }
 
-  // Eliminar nodo
   deleteNode() {
     if (!this.selectedNode) return;
-    if (confirm(`¿Eliminar vuelo ${this.selectedNode.code}?`)) {
+    if (confirm(`Eliminar ${this.selectedNode.code}?`)) {
       this.flightService.delete(this.selectedNode.code).subscribe({
         next: () => {
-          this.statusMessage = '✅ Vuelo eliminado correctamente';
+          this.statusMessage = 'Nodo eliminado';
           this.selectedNode = null;
           this.refreshTrees();
-          this.loadMetrics(); // Asegurar que las métricas se actualicen
         },
-        error: (err) => {
-          console.error(err);
-          this.statusMessage = this.getFriendlyErrorMessage(err, '❌ Error al eliminar vuelo.');
-        }
+        error: () => this.statusMessage = 'Error eliminando nodo'
       });
     }
   }
+
   deleteLeastProfitable(): void {
-  if (confirm('¿Eliminar el nodo de menor rentabilidad y toda su descendencia?')) {
-    this.flightService.deleteLeastProfitable().subscribe({
-      next: (response) => {
-        const code = response?.deleted_code ?? 'desconocido';
-        const removed = response?.nodes_removed ?? 1;
-        this.statusMessage = `✅ Nodo menos rentable (${code}) eliminado. Se eliminaron ${removed} nodo(s).`;
-        this.selectedNode = null;
-        this.refreshTrees();
-        this.loadMetrics();
-      },
-      error: (err) => {
-        console.error(err);
-        this.statusMessage = this.getFriendlyErrorMessage(err, '❌ Error al eliminar el nodo menos rentable.');
-      }
-    });
-  }
-}
-
-  // Versioning methods
-  openVersionModal() {
-    this.newVersionName = '';
-    this.showVersionModal = true;
-    this.loadVersions();
-  }
-
-  closeVersionModal() {
-    this.showVersionModal = false;
-  }
-
-  loadVersions() {
-    this.versioningService.listVersions().subscribe({
-      next: (response) => {
-        this.versions = response.versions || [];
-      },
-      error: (error) => {
-        console.error('Error loading versions:', error);
-      }
-    });
-  }
-
-  saveVersion() {
-    if (!this.newVersionName.trim()) {
-      alert('Por favor ingresa un nombre para la versión.');
-      return;
-    }
-    this.versioningService.saveVersion(this.newVersionName.trim()).subscribe({
-      next: (response) => {
-        this.statusMessage = `✅ Versión "${this.newVersionName}" guardada correctamente.`;
-        this.closeVersionModal();
-        this.refreshTrees();
-        this.loadMetrics(); // Asegurar que las métricas se actualicen
-        // Recargar versiones para mostrar la nueva
-        this.loadVersions();
-      },
-      error: (error) => {
-        console.error('Error saving version:', error);
-        this.statusMessage = '❌ Error al guardar la versión.';
-      }
-    });
-  }
-
-  restoreVersion(versionName: string) {
-    if (confirm(`¿Restaurar la versión "${versionName}"? Esto reemplazará el árbol actual.`)) {
-      this.versioningService.restoreVersion(versionName).subscribe({
-        next: () => {
-          this.statusMessage = `✅ Versión "${versionName}" restaurada correctamente.`;
+    if (confirm('Eliminar nodo menos rentable?')) {
+      this.flightService.deleteLeastProfitable().subscribe({
+        next: (r) => {
+          this.statusMessage = `${r.deleted_code} eliminado (${r.nodes_removed} nodos)`;
+          this.selectedNode = null;
           this.refreshTrees();
-          this.loadMetrics(); // Asegurar que las métricas se actualicen
         },
-        error: (error) => {
-          console.error('Error restoring version:', error);
-          this.statusMessage = '❌ Error al restaurar la versión.';
-        }
+        error: () => this.statusMessage = 'Error eliminando nodo'
       });
     }
   }
 
-  deleteVersion(versionName: string) {
-    if (confirm(`¿Eliminar permanentemente la versión "${versionName}"? Esta acción no se puede deshacer.`)) {
-      this.versioningService.deleteVersion(versionName).subscribe({
-        next: () => {
-          this.statusMessage = `✅ Versión "${versionName}" eliminada correctamente.`;
-          this.loadVersions(); // Recargar la lista
-        },
-        error: (error) => {
-          console.error('Error deleting version:', error);
-          this.statusMessage = '❌ Error al eliminar la versión.';
-        }
-      });
-    }
-  }
-
-  // Queue methods
-  openQueueModal() {
-    this.showQueueModal = true;
-    this.loadQueue();
-  }
-
-  closeQueueModal() {
-    this.showQueueModal = false;
-  }
-
-  loadQueue() {
-    this.queueService.getQueue().subscribe({
-      next: (response) => {
-        this.queueItems = response.items || [];
-      },
-      error: (error) => {
-        console.error('Error loading queue:', error);
-      }
-    });
-  }
-
-  enqueueFlight() {
-    // Use the same form data from the modal
-    if (!this.formData.code || !this.formData.origin || !this.formData.destination) {
-      alert('Por favor complete los campos obligatorios: código, origen y destino.');
-      return;
-    }
-
-    this.queueService.enqueue(this.formData).subscribe({
-      next: (response) => {
-        this.statusMessage = `✅ Vuelo "${this.formData.code}" agregado a la cola. Cola: ${response.queue_length} elementos.`;
-        this.loadQueue();
-        // Reset form but keep modal open for more additions
-        this.formData = {
-          code: '',
-          origin: '',
-          destination: '',
-          base_price: 0,
-          passengers: 0,
-          promotion: 0,
-          priority: 1
-        };
-      },
-      error: (error) => {
-        console.error('Error enqueuing flight:', error);
-        this.statusMessage = '❌ Error al agregar vuelo a la cola.';
-      }
-    });
-  }
-
-  processQueueStep() {
-    if (this.isProcessing) return;
-
-    this.isProcessing = true;
-    this.queueService.processStep().subscribe({
-      next: (result) => {
-        if (result.status === 'empty') {
-          this.statusMessage = '📭 La cola está vacía.';
-          this.isProcessing = false;
-          return;
-        }
-
-        // Add to processing log
-        this.processingLog.unshift(result);
-
-        // Update tree display
-        this.refreshTrees();
-        this.loadMetrics(); // Asegurar que las métricas se actualicen
-
-        // Show conflicts if any
-        if (result.balance_conflicts && result.balance_conflicts.length > 0) {
-          const conflicts = result.balance_conflicts.join(', ');
-          this.statusMessage = `⚠️ Vuelo ${result.flight?.code} insertado con conflictos: ${conflicts}`;
-        } else if (result.status === 'inserted') {
-          this.statusMessage = `✅ Vuelo ${result.flight?.code} insertado correctamente.`;
-        } else if (result.status === 'error') {
-          this.statusMessage = `❌ Error al insertar vuelo ${result.flight?.code}: ${result.error}`;
-        }
-
-        // Update queue
-        this.loadQueue();
-
-        this.isProcessing = false;
-      },
-      error: (error) => {
-        console.error('Error processing step:', error);
-        this.statusMessage = '❌ Error al procesar el paso.';
-        this.isProcessing = false;
-      }
-    });
-  }
-
-  clearQueue() {
-    if (confirm('¿Limpiar toda la cola de inserciones?')) {
-      this.queueService.clearQueue().subscribe({
-        next: () => {
-          this.statusMessage = '🧹 Cola limpiada correctamente.';
-          this.queueItems = [];
-          this.processingLog = [];
-        },
-        error: (error) => {
-          console.error('Error clearing queue:', error);
-          this.statusMessage = '❌ Error al limpiar la cola.';
-        }
-      });
-    }
-  }
-
-  // Metrics methods
-  openMetricsModal() {
-    this.showMetricsModal = true;
-    this.loadMetrics();
-  }
-
-  closeMetricsModal() {
-    this.showMetricsModal = false;
-  }
-
-  loadMetrics() {
-    this.metricsService.getMetrics().subscribe({
-      next: (response) => {
-        this.metrics = response;
-      },
-      error: (error) => {
-        console.error('Error loading metrics:', error);
-        this.statusMessage = '❌ Error al cargar las métricas.';
-      }
-    });
-  }
-
-  getRotationEntries(): any[] {
-    if (!this.metrics?.rotations) return [];
-    return Object.entries(this.metrics.rotations).map(([type, count]) => ({
-      type: type.toUpperCase(),
-      count: count as number
-    }));
-  }
-
-  getTotalRotations(): number {
-    if (!this.metrics?.rotations) return 0;
-    const rotations = this.metrics.rotations as { [key: string]: number };
-    return Object.values(rotations).reduce((sum, count) => sum + count, 0);
-  }
-
-  // Penalización por Profundidad Crítica
   loadCriticalDepth() {
-    console.log('🔵 loadCriticalDepth() - Llamando GET /api/tree/critical-depth');
     this.treeService.getCriticalDepth().subscribe({
-      next: (response) => {
-        console.log('✅ Respuesta critical-depth:', response);
-        this.criticalDepth = response.critical_depth;
+      next: (r) => {
+        this.criticalDepth = r.critical_depth;
         this.countCriticalNodes();
       },
-      error: (error) => {
-        console.error('❌ Error loading critical depth:', error);
-      }
+      error: () => {}
     });
   }
 
   applyDepthPenalty() {
-    console.log(`📏 Profundidad crítica cambiada a ${this.criticalDepth} - Presiona "Recargar vista" para aplicar`);
-    this.statusMessage = `Profundidad crítica set a ${this.criticalDepth}. Presiona "Recargar vista" para aplicar cambios.`;
+    this.statusMessage = `Profundidad cr�tica: ${this.criticalDepth}. Presiona Recargar`;
   }
 
   isCriticalDepthValid(): boolean {
@@ -615,34 +317,23 @@ submitForm() {
 
   countCriticalNodes() {
     let count = 0;
-    
     const countRecursive = (node: any) => {
       if (!node) return;
       if (node.is_critical) count++;
       countRecursive(node.left);
       countRecursive(node.right);
     };
-    
     countRecursive(this.avlTree?.root);
     this.criticalNodesCount = count;
   }
 
   buildNodeTooltip(node: any): string {
-    let tooltip = `Flight: ${node.code}\n`;
-    tooltip += `Route: ${node.origin} → ${node.destination}\n`;
-    tooltip += `Base Price: $${node.base_price}\n`;
-    tooltip += `Passengers: ${node.passengers}\n`;
-    tooltip += `Promotion: $${node.promotion || 0}\n`;
-    
-    if (node.is_critical) {
-      tooltip += `⚠️ CRITICAL NODE\n`;
-      tooltip += `Penalty (+25%): $${node.penalty}\n`;
-    } else {
-      tooltip += `Penalty: $0\n`;
-    }
-    
-    tooltip += `Final Price: $${node.final_price}`;
-    
-    return tooltip;
+    let t = `${node.code}: ${node.origin} -> ${node.destination}\n$${node.base_price}\n${node.passengers}pax`;
+    if (node.is_critical) t += `\n+25%: $${node.penalty}`;
+    return t;
+  }
+
+  onTreeUpdated() {
+    this.refreshTrees();
   }
 }

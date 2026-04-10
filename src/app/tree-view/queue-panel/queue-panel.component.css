@@ -1,0 +1,234 @@
+/* Queue Panel Component Styles */
+
+:host {
+  display: block;
+  margin-top: 24px;
+}
+
+.concurrency-card {
+  margin-bottom: 24px;
+}
+
+.concurrency-buttons {
+  display: flex;
+  justify-content: center;
+}
+
+.queue-status {
+  margin-top: 16px;
+  font-size: 15px;
+  color: #374151;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1100;
+}
+
+.modal-container {
+  background: white;
+  border-radius: 18px;
+  width: 760px;
+  max-width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.18);
+}
+
+.modal-container.minimized {
+  width: 320px;
+  max-width: 95%;
+  max-height: none;
+  padding: 16px;
+}
+
+.modal-overlay.minimized {
+  background: rgba(0, 0, 0, 0.05);
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 16px;
+}
+
+.modal-overlay.minimized .modal-container {
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+}
+
+.minimized-status {
+  padding: 16px;
+  border-radius: 14px;
+  background: #fff7e0;
+  border: 1px solid #ffe6a7;
+}
+
+.queue-actions button {
+  min-width: 140px;
+}
+
+.queue-help {
+  margin-top: 12px;
+}
+
+.queue-help small {
+  color: #6b7280;
+}
+
+.queue-section.minimized-status h4 {
+  margin-bottom: 12px;
+}
+
+.queue-section.minimized-status p {
+  margin: 8px 0;
+}
+
+.queue-section.minimized-status button {
+  margin-top: 10px;
+}
+
+.queue-item {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: white;
+  border: 1px solid #ffe6a7;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.05);
+}
+
+.queue-list {
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.queue-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 22px 28px;
+  border-bottom: 1px solid #e5e5e5;
+  background: linear-gradient(135deg, #f9a825 0%, #f57f17 100%);
+  color: white;
+  border-radius: 18px 18px 0 0;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.close-btn {
+  background: transparent;
+  border: none;
+  font-size: 26px;
+  color: white;
+  cursor: pointer;
+  opacity: 0.9;
+}
+
+.modal-body {
+  padding: 24px 28px 28px;
+}
+
+.queue-section {
+  margin-bottom: 24px;
+  padding: 18px;
+  border-radius: 14px;
+  background: #fff8e1;
+  border: 1px solid #ffe6a7;
+}
+
+.queue-section h4 {
+  color: #bf360c;
+  margin-bottom: 16px;
+}
+
+.queue-list {
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.queue-item {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: white;
+  border: 1px solid #ffe6a7;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.05);
+}
+
+.queue-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.processing-log {
+  display: grid;
+  gap: 12px;
+}
+
+.log-entry {
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.05);
+}
+
+.log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+}
+
+.status-badge.inserted {
+  background: #4caf50;
+}
+
+.status-badge.error {
+  background: #f44336;
+}
+
+.status-badge.warning {
+  background: #ff9800;
+}
+
+.log-details small,
+.log-error small {
+  display: block;
+  color: #4b5563;
+}
+
+.conflicts {
+  margin-top: 4px;
+  color: #d97706;
+}
+
+.log-error {
+  margin-top: 10px;
+}

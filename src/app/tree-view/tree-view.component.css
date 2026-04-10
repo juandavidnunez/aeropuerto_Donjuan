@@ -68,13 +68,18 @@
 }
 
 .tree-canvas {
-  overflow-x: auto;
-  padding-bottom: 14px;
+  max-height: none;
+  padding-bottom: 24px;
 }
 
 .tree-scroll {
-  min-width: max-content;
-  padding: 8px 16px 20px;
+  min-width: 100%;
+  max-width: 100%;
+  padding: 8px 16px 60px;
+}
+
+.tree-list {
+  transform-origin: top center;
 }
 
 .tree-list,
@@ -100,7 +105,7 @@
   list-style: none;
   position: relative;
   text-align: center;
-  padding: 24px 8px 0;
+  padding: 18px 6px 0;
 }
 
 .tree-children::before {
@@ -160,12 +165,12 @@
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  padding: 10px 12px;
+  padding: 10px 10px;
   border-radius: 14px;
   background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
   border: 1px solid #cdd9ee;
-  min-width: 120px;
-  max-width: 170px;
+  min-width: 100px;
+  max-width: 140px;
   box-shadow: 0 6px 18px rgba(26, 115, 232, 0.08);
   cursor: pointer;
 }
@@ -382,11 +387,6 @@
   }
 }
 
-/* VERSIONADO */
-.version-card {
-  /* margin-top removido - ahora usa grid */
-}
-
 .version-buttons {
   display: flex;
   justify-content: center;
@@ -438,10 +438,6 @@
 }
 
 /* SIMULACIÓN DE CONCURRENCIA */
-.concurrency-card {
-  /* margin-top removido - ahora usa grid */
-}
-
 .concurrency-buttons {
   display: flex;
   justify-content: center;
@@ -582,10 +578,6 @@
 }
 
 /* MÉTRICAS */
-.metrics-card {
-  /* margin-top removido - ahora usa espaciado natural */
-}
-
 .metrics-buttons {
   display: flex;
   justify-content: center;

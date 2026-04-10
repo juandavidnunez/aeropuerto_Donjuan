@@ -46,12 +46,16 @@ export class AdminLayoutComponent implements OnInit {
          }
       });
       this._router = this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe((event: NavigationEnd) => {
-           elemMainPanel.scrollTop = 0;
-           elemSidebar.scrollTop = 0;
+           if (elemMainPanel) elemMainPanel.scrollTop = 0;
+           if (elemSidebar) elemSidebar.scrollTop = 0;
       });
       if (window.matchMedia(`(min-width: 960px)`).matches && !this.isMac()) {
-          let ps = new PerfectScrollbar(elemMainPanel);
-          ps = new PerfectScrollbar(elemSidebar);
+          if (elemMainPanel) {
+              const psMain = new PerfectScrollbar(elemMainPanel);
+          }
+          if (elemSidebar) {
+              const psSidebar = new PerfectScrollbar(elemSidebar);
+          }
       }
 
 
@@ -59,7 +63,7 @@ export class AdminLayoutComponent implements OnInit {
   ngAfterViewInit() {
       this.runOnRouteChange();
   }
-  isMaps(path){
+  isMaps(path) {
       var titlee = this.location.prepareExternalUrl(this.location.path());
       titlee = titlee.slice( 1 );
       if(path == titlee){
@@ -72,8 +76,11 @@ export class AdminLayoutComponent implements OnInit {
   runOnRouteChange(): void {
     if (window.matchMedia(`(min-width: 960px)`).matches && !this.isMac()) {
       const elemMainPanel = <HTMLElement>document.querySelector('.main-panel');
-      const ps = new PerfectScrollbar(elemMainPanel);
-      ps.update();
+      if (elemMainPanel) {
+        const ps = new PerfectScrollbar(elemMainPanel);
+        ps.update();
+      }
+
     }
   }
   isMac(): boolean {
