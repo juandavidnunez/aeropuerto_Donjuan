@@ -114,7 +114,7 @@
 </div>
 
    <!-- MODO ESTRÉS -->
-   <app-stress-panel></app-stress-panel>
+   <app-stress-panel (treeChanged)="refreshTrees()"></app-stress-panel>
 
 <!-- MODAL PARA INSERTAR/EDITAR -->
 <div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
