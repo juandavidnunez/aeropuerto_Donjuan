@@ -113,6 +113,9 @@
   </div>
 </div>
 
+   <!-- MODO ESTRÉS -->
+   <app-stress-panel></app-stress-panel>
+
 <!-- MODAL PARA INSERTAR/EDITAR -->
 <div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
   <div class="modal-container" (click)="$event.stopPropagation()">
@@ -215,6 +218,7 @@
 
   <!-- SIMULACIÓN DE CONCURRENCIA -->
   <app-queue-panel (treeUpdated)="onTreeUpdated()"></app-queue-panel>
+
 </div>
 
 <!-- ============================================= -->

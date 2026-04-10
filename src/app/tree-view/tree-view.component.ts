@@ -70,7 +70,7 @@ export class TreeViewComponent implements OnInit, AfterViewInit {
     reader.onload = () => {
       try {
         const parsedData = JSON.parse(String(reader.result));
-        this.selectedMode = this.detectMode(parsedData);
+        this.selectedMode = this.detectMode(parsedData, file.name);
         this.loadTree(parsedData);
       } catch (error) {
         this.statusMessage = 'El archivo no es JSON v�lido.';
@@ -107,11 +107,30 @@ export class TreeViewComponent implements OnInit, AfterViewInit {
     return error?.error?.detail || fallback;
   }
 
-  detectMode(data: any): 'topology' | 'insertion' {
-    const mode = String(data?.mode || data?.modo || '').toLowerCase();
-    if (mode === 'topology' || mode === 'insertion') return mode;
-    if (Array.isArray(data?.flights)) return 'insertion';
-    if (data?.left || data?.right) return 'topology';
+  detectMode(data: any, fileName: string = ''): 'topology' | 'insertion' {
+    const rawMode = String(data?.mode || data?.modo || '').trim().toLowerCase();
+    if (['topology', 'topologia'].includes(rawMode)) return 'topology';
+    if (['insertion', 'insercion'].includes(rawMode)) return 'insertion';
+
+    // Inserción: lista de vuelos explícita
+    if (Array.isArray(data?.flights) || Array.isArray(data?.vuelos)) return 'insertion';
+
+    // Topología: nodo raíz en "tree" o estructura de nodo en la raíz
+    const candidateNode = data?.tree || data?.root || data?.arbol || data?.raiz || data;
+    if (candidateNode && typeof candidateNode === 'object') {
+      const hasCode = typeof candidateNode.code === 'string';
+      const hasTreeEdges = ('left' in candidateNode) || ('right' in candidateNode);
+      if (hasCode && hasTreeEdges) return 'topology';
+    }
+
+    // Fallback heurístico: si el JSON completo es un arreglo, suele ser inserción
+    if (Array.isArray(data)) return 'insertion';
+
+    // Fallback por nombre de archivo (ej: topologia1.json, insertion_data.json)
+    const normalizedName = String(fileName).toLowerCase();
+    if (normalizedName.includes('topologia') || normalizedName.includes('topology')) return 'topology';
+    if (normalizedName.includes('insercion') || normalizedName.includes('insertion')) return 'insertion';
+
     return this.selectedMode;
   }
 
