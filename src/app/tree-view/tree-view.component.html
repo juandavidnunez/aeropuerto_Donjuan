@@ -56,10 +56,10 @@
     <div class="card stat-card">
       <div class="card-body">
         <h4>AVL</h4>
-        <p><strong>Raíz:</strong> {{ avlStats?.root_code || '—' }}</p>
-        <p><strong>Altura:</strong> {{ avlStats?.total_height ?? 0 }}</p>
-        <p><strong>Hojas:</strong> {{ avlStats?.leaf_count ?? 0 }}</p>
-        <p><strong>Nodos:</strong> {{ avlStats?.node_count ?? 0 }}</p>
+        <p><strong>Raíz:</strong> {{ avlMetrics?.root_code || '—' }}</p>
+        <p><strong>Altura:</strong> {{ avlMetrics?.height ?? 0 }}</p>
+        <p><strong>Hojas:</strong> {{ avlMetrics?.leaf_count ?? 0 }}</p>
+        <p><strong>Nodos:</strong> {{ avlMetrics?.node_count ?? 0 }}</p>
       </div>
     </div>
 
@@ -207,7 +207,7 @@
 <!-- ============================================= -->
 <!-- MÉTRICAS ANALÍTICAS -->
 <!-- ============================================= -->
-<app-metrics-panel *ngIf="selectedFileName" (treeUpdated)="onTreeUpdated()"></app-metrics-panel>
+<app-metrics-panel *ngIf="selectedFileName" [metrics]="avlMetrics"></app-metrics-panel>
 
 <!-- ============================================= -->
 <!-- FUNCIONALIDADES AVANZADAS -->

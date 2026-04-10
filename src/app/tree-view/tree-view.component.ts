@@ -1,6 +1,7 @@
 ﻿import { AfterViewInit, Component, ElementRef, HostListener, OnInit, QueryList, Renderer2, ViewChildren } from '@angular/core';
 import { forkJoin } from 'rxjs';
 import { FlightService } from 'app/services/flight.service';
+import { MetricsService } from 'app/services/metrics.service';
 import { TreeService } from '../services/tree.service';
 
 @Component({
@@ -13,11 +14,11 @@ export class TreeViewComponent implements OnInit, AfterViewInit {
 
   avlTree: any = { root: null };
   bstTree: any = { root: null };
-  avlStats: any = null;
+  avlMetrics: any = null;
   bstStats: any = null;
   selectedMode: 'topology' | 'insertion' = 'insertion';
   selectedFileName = '';
-  statusMessage = 'Selecciona un archivo JSON para cargar el �rbol.';
+  statusMessage = 'Selecciona un archivo JSON para cargar el árbol.';
   isLoading = false;
   selectedNode: any = null;
   showModal: boolean = false;
@@ -38,6 +39,7 @@ export class TreeViewComponent implements OnInit, AfterViewInit {
   constructor(
     private treeService: TreeService,
     private flightService: FlightService,
+    private metricsService: MetricsService,
     private renderer: Renderer2
   ) { }
 
@@ -61,7 +63,7 @@ export class TreeViewComponent implements OnInit, AfterViewInit {
     if (!file) return;
 
     if (!this.isCriticalDepthValid()) {
-      this.statusMessage = 'Debes ingresar una profundidad cr�tica v�lida (0-20)';
+      this.statusMessage = 'Debes ingresar una profundidad crítica válida (0-20)';
       return;
     }
 
@@ -73,7 +75,7 @@ export class TreeViewComponent implements OnInit, AfterViewInit {
         this.selectedMode = this.detectMode(parsedData, file.name);
         this.loadTree(parsedData);
       } catch (error) {
-        this.statusMessage = 'El archivo no es JSON v�lido.';
+        this.statusMessage = 'El archivo no es JSON válido.';
       }
     };
     reader.readAsText(file);
@@ -81,20 +83,21 @@ export class TreeViewComponent implements OnInit, AfterViewInit {
 
   loadTree(data: any): void {
     this.isLoading = true;
-    this.statusMessage = 'Cargando �rbol...';
+    this.statusMessage = 'Cargando árbol...';
     this.treeService.loadTree(this.selectedMode, data).subscribe({
       next: (response) => {
+        this.selectedMode = response?.mode === 'topology' ? 'topology' : 'insertion';
         this.avlTree = response.avl || { root: null };
         this.bstTree = response.bst || { root: null };
-        this.avlStats = response.avl_stats || null;
         this.bstStats = response.bst_stats || null;
+        this.loadAvlMetrics(response.avl_stats || null);
         this.statusMessage = response.message || '�rbol cargado.';
         this.countCriticalNodes();
         setTimeout(() => this.updateTreeScale(), 0);
         this.isLoading = false;
       },
       error: (error) => {
-        this.statusMessage = this.getFriendlyErrorMessage(error, 'Error cargando �rbol');
+        this.statusMessage = this.getFriendlyErrorMessage(error, 'Error cargando árbol');
         this.isLoading = false;
       }
     });
@@ -170,30 +173,41 @@ export class TreeViewComponent implements OnInit, AfterViewInit {
         forkJoin({
           avlTree: this.treeService.getTree('avl'),
           bstTree: this.treeService.getTree('bst'),
-          avlStats: this.treeService.getStats('avl'),
+          avlMetrics: this.metricsService.getMetrics(),
           bstStats: this.treeService.getStats('bst')
         }).subscribe({
-          next: ({ avlTree, bstTree, avlStats, bstStats }) => {
+          next: ({ avlTree, bstTree, avlMetrics, bstStats }) => {
             this.avlTree = avlTree || { root: null };
             this.bstTree = bstTree || { root: null };
-            this.avlStats = avlStats || null;
+            this.avlMetrics = avlMetrics || null;
             this.bstStats = bstStats || null;
             if (this.avlTree?.root) {
-              this.statusMessage = '�rbol listo.';
+              this.statusMessage = 'Árbol listo.';
               this.countCriticalNodes();
             }
             setTimeout(() => this.updateTreeScale(), 0);
             this.isLoading = false;
           },
           error: () => {
-            this.statusMessage = 'Error recargando �rbol';
+            this.statusMessage = 'Error recargando árbol';
             this.isLoading = false;
           }
         });
       },
       error: () => {
-        this.statusMessage = 'Error aplicando profundidad cr�tica';
+        this.statusMessage = 'Error aplicando profundidad crítica';
         this.isLoading = false;
+      }
+    });
+  }
+
+  private loadAvlMetrics(fallback: any = null): void {
+    this.metricsService.getMetrics().subscribe({
+      next: (metrics) => {
+        this.avlMetrics = metrics;
+      },
+      error: () => {
+        this.avlMetrics = fallback;
       }
     });
   }
@@ -327,7 +341,7 @@ export class TreeViewComponent implements OnInit, AfterViewInit {
   }
 
   applyDepthPenalty() {
-    this.statusMessage = `Profundidad cr�tica: ${this.criticalDepth}. Presiona Recargar`;
+    this.statusMessage = `Profundidad crítica: ${this.criticalDepth}. Presiona Recargar`;
   }
 
   isCriticalDepthValid(): boolean {
